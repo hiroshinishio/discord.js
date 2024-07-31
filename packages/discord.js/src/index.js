@@ -180,7 +180,6 @@ exports.RoleSelectMenuBuilder = require('./structures/RoleSelectMenuBuilder');
 exports.StringSelectMenuBuilder = require('./structures/StringSelectMenuBuilder');
 exports.UserSelectMenuBuilder = require('./structures/UserSelectMenuBuilder');
 exports.BaseSelectMenuComponent = require('./structures/BaseSelectMenuComponent');
-exports.SelectMenuComponent = require('./structures/SelectMenuComponent');
 exports.ChannelSelectMenuComponent = require('./structures/ChannelSelectMenuComponent');
 exports.MentionableSelectMenuComponent = require('./structures/MentionableSelectMenuComponent');
 exports.RoleSelectMenuComponent = require('./structures/RoleSelectMenuComponent');
