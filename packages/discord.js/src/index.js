@@ -175,7 +175,6 @@ exports.ReactionCollector = require('./structures/ReactionCollector');
 exports.ReactionEmoji = require('./structures/ReactionEmoji');
 exports.RichPresenceAssets = require('./structures/Presence').RichPresenceAssets;
 exports.Role = require('./structures/Role').Role;
-exports.SelectMenuBuilder = require('./structures/SelectMenuBuilder');
 exports.ChannelSelectMenuBuilder = require('./structures/ChannelSelectMenuBuilder');
 exports.MentionableSelectMenuBuilder = require('./structures/MentionableSelectMenuBuilder');
 exports.RoleSelectMenuBuilder = require('./structures/RoleSelectMenuBuilder');
