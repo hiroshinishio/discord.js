@@ -185,7 +185,6 @@ exports.MentionableSelectMenuComponent = require('./structures/MentionableSelect
 exports.RoleSelectMenuComponent = require('./structures/RoleSelectMenuComponent');
 exports.StringSelectMenuComponent = require('./structures/StringSelectMenuComponent');
 exports.UserSelectMenuComponent = require('./structures/UserSelectMenuComponent');
-exports.SelectMenuInteraction = require('./structures/SelectMenuInteraction');
 exports.ChannelSelectMenuInteraction = require('./structures/ChannelSelectMenuInteraction');
 exports.MentionableSelectMenuInteraction = require('./structures/MentionableSelectMenuInteraction');
 exports.MentionableSelectMenuInteraction = require('./structures/MentionableSelectMenuInteraction');
