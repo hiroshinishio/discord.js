@@ -65,7 +65,6 @@
 	"homepage": "https://discord.js.org",
 	"funding": "https://github.com/discordjs/discord.js?sponsor",
 	"dependencies": {
-		"@discordjs/formatters": "workspace:^",
 		"@discordjs/util": "workspace:^",
 		"@sapphire/shapeshift": "^4.0.0",
 		"discord-api-types": "0.37.97",
