@@ -181,6 +181,9 @@ import {
   APISelectMenuDefaultValue,
   SelectMenuDefaultValueType,
   InviteType,
+  GuildScheduledEventRecurrenceRuleWeekday,
+  GuildScheduledEventRecurrenceRuleMonth,
+  GuildScheduledEventRecurrenceRuleFrequency,
 } from 'discord-api-types/v10';
 import { ChildProcess } from 'node:child_process';
 import { EventEmitter } from 'node:events';
@@ -1768,6 +1771,7 @@ export class GuildScheduledEvent<Status extends GuildScheduledEventStatus = Guil
   public entityMetadata: GuildScheduledEventEntityMetadata | null;
   public userCount: number | null;
   public creator: User | null;
+  public recurrenceRule: GuildScheduledEventRecurrenceRule | null;
   public get createdTimestamp(): number;
   public get createdAt(): Date;
   public get scheduledStartAt(): Date | null;
@@ -1804,6 +1808,26 @@ export class GuildScheduledEvent<Status extends GuildScheduledEventStatus = Guil
   public isCanceled(): this is GuildScheduledEvent<GuildScheduledEventStatus.Canceled>;
   public isCompleted(): this is GuildScheduledEvent<GuildScheduledEventStatus.Completed>;
   public isScheduled(): this is GuildScheduledEvent<GuildScheduledEventStatus.Scheduled>;
+}
+
+export interface GuildScheduledEventRecurrenceRule {
+  startTimestamp: number;
+  get startAt(): Date;
+  endTimestamp: number | null;
+  get endAt(): Date | null;
+  frequency: GuildScheduledEventRecurrenceRuleFrequency;
+  interval: number;
+  byWeekday: readonly GuildScheduledEventRecurrenceRuleWeekday[] | null;
+  byNWeekday: readonly GuildScheduledEventRecurrenceRuleNWeekday[] | null;
+  byMonth: readonly GuildScheduledEventRecurrenceRuleMonth[] | null;
+  byMonthDay: readonly number[] | null;
+  byYearDay: readonly number[] | null;
+  count: number | null;
+}
+
+export interface GuildScheduledEventRecurrenceRuleNWeekday {
+  n: number;
+  day: GuildScheduledEventRecurrenceRuleWeekday;
 }
 
 export class GuildTemplate extends Base {
@@ -6119,6 +6143,20 @@ export interface GuildScheduledEventCreateOptions {
   entityMetadata?: GuildScheduledEventEntityMetadataOptions;
   image?: BufferResolvable | Base64Resolvable | null;
   reason?: string;
+  recurrenceRule?: GuildScheduledEventRecurrenceRuleOptions;
+}
+
+export interface GuildScheduledEventRecurrenceRuleOptions {
+  startAt: DateResolvable;
+  endAt: DateResolvable;
+  frequency: GuildScheduledEventRecurrenceRuleFrequency;
+  interval: number;
+  byWeekday: readonly GuildScheduledEventRecurrenceRuleWeekday[];
+  byNWeekday: readonly GuildScheduledEventRecurrenceRuleNWeekday[];
+  byMonth: readonly GuildScheduledEventRecurrenceRuleMonth[];
+  byMonthDay: readonly number[];
+  byYearDay: readonly number[];
+  count: number;
 }
 
 export interface GuildScheduledEventEditOptions<
