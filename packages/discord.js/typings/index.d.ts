@@ -9,7 +9,7 @@ import {
   StringSelectMenuBuilder as BuilderStringSelectMenuComponent,
   UserSelectMenuBuilder as BuilderUserSelectMenuComponent,
   TextInputBuilder as BuilderTextInputComponent,
-  SelectMenuOptionBuilder as BuildersSelectMenuOption,
+  StringSelectMenuOptionBuilder as BuildersSelectMenuOption,
   ModalActionRowComponentBuilder,
   ModalBuilder as BuildersModal,
   AnyComponentBuilder,
