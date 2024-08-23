@@ -7,7 +7,7 @@ import { mix } from 'ts-mixer';
 import { assertReturnOfBuilder, validateMaxOptionsLength, validateRequiredParameters } from './Assertions.js';
 import type { ToAPIApplicationCommandOptions } from './SlashCommandBuilder.js';
 import type { ApplicationCommandOptionBase } from './mixins/ApplicationCommandOptionBase.js';
-import { SharedNameAndDescription } from './mixins/NameAndDescription.js';
+import { SharedNameAndDescription } from './mixins/SharedNameAndDescription.js';
 import { SharedSlashCommandOptions } from './mixins/SharedSlashCommandOptions.js';
 
 /**

@@ -1,16 +1,16 @@
-import { assertReturnOfBuilder, validateMaxOptionsLength } from '../Assertions.js';
-import type { ToAPIApplicationCommandOptions } from '../SlashCommandBuilder.js';
 import { SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } from '../SlashCommandSubcommands.js';
+
+export interface SharedSlashCommandSubcommandsData {
+	options?: (SlashCommandSubcommandBuilder | SlashCommandSubcommandGroupBuilder)[];
+}
 
 /**
  * This mixin holds symbols that can be shared in slash subcommands.
  *
  * @typeParam TypeAfterAddingSubcommands - The type this class should return after adding a subcommand or subcommand group.
  */
-export class SharedSlashCommandSubcommands<
-	TypeAfterAddingSubcommands extends SharedSlashCommandSubcommands<TypeAfterAddingSubcommands>,
-> {
-	public readonly options: ToAPIApplicationCommandOptions[] = [];
+export class SharedSlashCommandSubcommands {
+	protected declare readonly data: SharedSlashCommandSubcommandsData;
 
 	/**
 	 * Adds a new subcommand group to this command.
@@ -21,21 +21,13 @@ export class SharedSlashCommandSubcommands<
 		input:
 			| SlashCommandSubcommandGroupBuilder
 			| ((subcommandGroup: SlashCommandSubcommandGroupBuilder) => SlashCommandSubcommandGroupBuilder),
-	): TypeAfterAddingSubcommands {
-		const { options } = this;
+	): this {
+		this.data.options ??= [];
 
-		// First, assert options conditions - we cannot have more than 25 options
-		validateMaxOptionsLength(options);
-
-		// Get the final result
 		const result = typeof input === 'function' ? input(new SlashCommandSubcommandGroupBuilder()) : input;
+		this.data.options.push(result);
 
-		assertReturnOfBuilder(result, SlashCommandSubcommandGroupBuilder);
-
-		// Push it
-		options.push(result);
-
-		return this as unknown as TypeAfterAddingSubcommands;
+		return this;
 	}
 
 	/**
@@ -47,20 +39,12 @@ export class SharedSlashCommandSubcommands<
 		input:
 			| SlashCommandSubcommandBuilder
 			| ((subcommandGroup: SlashCommandSubcommandBuilder) => SlashCommandSubcommandBuilder),
-	): TypeAfterAddingSubcommands {
-		const { options } = this;
+	): this {
+		this.data.options ??= [];
 
-		// First, assert options conditions - we cannot have more than 25 options
-		validateMaxOptionsLength(options);
-
-		// Get the final result
 		const result = typeof input === 'function' ? input(new SlashCommandSubcommandBuilder()) : input;
+		this.data.options.push(result);
 
-		assertReturnOfBuilder(result, SlashCommandSubcommandBuilder);
-
-		// Push it
-		options.push(result);
-
-		return this as unknown as TypeAfterAddingSubcommands;
+		return this;
 	}
 }

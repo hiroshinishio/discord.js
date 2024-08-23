@@ -1,5 +1,3 @@
-import { assertReturnOfBuilder, validateMaxOptionsLength } from '../Assertions.js';
-import type { ToAPIApplicationCommandOptions } from '../SlashCommandBuilder';
 import { SlashCommandAttachmentOption } from '../options/attachment.js';
 import { SlashCommandBooleanOption } from '../options/boolean.js';
 import { SlashCommandChannelOption } from '../options/channel.js';
@@ -11,15 +9,16 @@ import { SlashCommandStringOption } from '../options/string.js';
 import { SlashCommandUserOption } from '../options/user.js';
 import type { ApplicationCommandOptionBase } from './ApplicationCommandOptionBase.js';
 
+export interface SharedSlashCommandOptionsData {
+	options?: ApplicationCommandOptionBase[];
+}
 /**
  * This mixin holds symbols that can be shared in slash command options.
  *
  * @typeParam TypeAfterAddingOptions - The type this class should return after adding an option.
  */
-export class SharedSlashCommandOptions<
-	TypeAfterAddingOptions extends SharedSlashCommandOptions<TypeAfterAddingOptions>,
-> {
-	public readonly options!: ToAPIApplicationCommandOptions[];
+export class SharedSlashCommandOptions {
+	protected declare readonly data: SharedSlashCommandOptionsData;
 
 	/**
 	 * Adds a boolean option.
@@ -29,7 +28,7 @@ export class SharedSlashCommandOptions<
 	public addBooleanOption(
 		input: SlashCommandBooleanOption | ((builder: SlashCommandBooleanOption) => SlashCommandBooleanOption),
 	) {
-		return this._sharedAddOptionMethod(input, SlashCommandBooleanOption);
+		return this.sharedAddOptionMethod(input, SlashCommandBooleanOption);
 	}
 
 	/**
@@ -38,7 +37,7 @@ export class SharedSlashCommandOptions<
 	 * @param input - A function that returns an option builder or an already built builder
 	 */
 	public addUserOption(input: SlashCommandUserOption | ((builder: SlashCommandUserOption) => SlashCommandUserOption)) {
-		return this._sharedAddOptionMethod(input, SlashCommandUserOption);
+		return this.sharedAddOptionMethod(input, SlashCommandUserOption);
 	}
 
 	/**
@@ -49,7 +48,7 @@ export class SharedSlashCommandOptions<
 	public addChannelOption(
 		input: SlashCommandChannelOption | ((builder: SlashCommandChannelOption) => SlashCommandChannelOption),
 	) {
-		return this._sharedAddOptionMethod(input, SlashCommandChannelOption);
+		return this.sharedAddOptionMethod(input, SlashCommandChannelOption);
 	}
 
 	/**
@@ -58,7 +57,7 @@ export class SharedSlashCommandOptions<
 	 * @param input - A function that returns an option builder or an already built builder
 	 */
 	public addRoleOption(input: SlashCommandRoleOption | ((builder: SlashCommandRoleOption) => SlashCommandRoleOption)) {
-		return this._sharedAddOptionMethod(input, SlashCommandRoleOption);
+		return this.sharedAddOptionMethod(input, SlashCommandRoleOption);
 	}
 
 	/**
@@ -69,7 +68,7 @@ export class SharedSlashCommandOptions<
 	public addAttachmentOption(
 		input: SlashCommandAttachmentOption | ((builder: SlashCommandAttachmentOption) => SlashCommandAttachmentOption),
 	) {
-		return this._sharedAddOptionMethod(input, SlashCommandAttachmentOption);
+		return this.sharedAddOptionMethod(input, SlashCommandAttachmentOption);
 	}
 
 	/**
@@ -80,7 +79,7 @@ export class SharedSlashCommandOptions<
 	public addMentionableOption(
 		input: SlashCommandMentionableOption | ((builder: SlashCommandMentionableOption) => SlashCommandMentionableOption),
 	) {
-		return this._sharedAddOptionMethod(input, SlashCommandMentionableOption);
+		return this.sharedAddOptionMethod(input, SlashCommandMentionableOption);
 	}
 
 	/**
@@ -91,7 +90,7 @@ export class SharedSlashCommandOptions<
 	public addStringOption(
 		input: SlashCommandStringOption | ((builder: SlashCommandStringOption) => SlashCommandStringOption),
 	) {
-		return this._sharedAddOptionMethod(input, SlashCommandStringOption);
+		return this.sharedAddOptionMethod(input, SlashCommandStringOption);
 	}
 
 	/**
@@ -102,7 +101,7 @@ export class SharedSlashCommandOptions<
 	public addIntegerOption(
 		input: SlashCommandIntegerOption | ((builder: SlashCommandIntegerOption) => SlashCommandIntegerOption),
 	) {
-		return this._sharedAddOptionMethod(input, SlashCommandIntegerOption);
+		return this.sharedAddOptionMethod(input, SlashCommandIntegerOption);
 	}
 
 	/**
@@ -113,7 +112,7 @@ export class SharedSlashCommandOptions<
 	public addNumberOption(
 		input: SlashCommandNumberOption | ((builder: SlashCommandNumberOption) => SlashCommandNumberOption),
 	) {
-		return this._sharedAddOptionMethod(input, SlashCommandNumberOption);
+		return this.sharedAddOptionMethod(input, SlashCommandNumberOption);
 	}
 
 	/**
@@ -123,23 +122,15 @@ export class SharedSlashCommandOptions<
 	 * @param Instance - The instance of whatever is being added
 	 * @internal
 	 */
-	private _sharedAddOptionMethod<OptionBuilder extends ApplicationCommandOptionBase>(
+	private sharedAddOptionMethod<OptionBuilder extends ApplicationCommandOptionBase>(
 		input: OptionBuilder | ((builder: OptionBuilder) => OptionBuilder),
 		Instance: new () => OptionBuilder,
-	): TypeAfterAddingOptions {
-		const { options } = this;
+	): this {
+		this.data.options ??= [];
 
-		// First, assert options conditions - we cannot have more than 25 options
-		validateMaxOptionsLength(options);
-
-		// Get the final result
 		const result = typeof input === 'function' ? input(new Instance()) : input;
+		this.data.options.push(result);
 
-		assertReturnOfBuilder(result, Instance);
-
-		// Push it
-		options.push(result);
-
-		return this as unknown as TypeAfterAddingOptions;
+		return this;
 	}
 }

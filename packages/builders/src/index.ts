@@ -36,7 +36,7 @@ export * from './interactions/slashCommands/mixins/ApplicationCommandOptionBase.
 export * from './interactions/slashCommands/mixins/ApplicationCommandOptionChannelTypesMixin.js';
 export * from './interactions/slashCommands/mixins/ApplicationCommandOptionWithAutocompleteMixin.js';
 export * from './interactions/slashCommands/mixins/ApplicationCommandOptionWithChoicesMixin.js';
-export * from './interactions/slashCommands/mixins/NameAndDescription.js';
+export * from './interactions/slashCommands/mixins/SharedNameAndDescription.js';
 export * from './interactions/slashCommands/mixins/SharedSlashCommandOptions.js';
 export * from './interactions/slashCommands/mixins/SharedSubcommands.js';
 export * from './interactions/slashCommands/mixins/SharedSlashCommand.js';

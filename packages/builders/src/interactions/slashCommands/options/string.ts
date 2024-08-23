@@ -1,32 +1,24 @@
-import { s } from '@sapphire/shapeshift';
-import { ApplicationCommandOptionType, type APIApplicationCommandStringOption } from 'discord-api-types/v10';
-import { mix } from 'ts-mixer';
+import type { APIApplicationCommandStringOption } from 'discord-api-types/v10';
+import { Mixin } from 'ts-mixer';
+import type { ApplicationCommandOptionBaseData } from '../mixins/ApplicationCommandOptionBase.js';
 import { ApplicationCommandOptionBase } from '../mixins/ApplicationCommandOptionBase.js';
+import type { ApplicationCommandOptionWithAutocompleteData } from '../mixins/ApplicationCommandOptionWithAutocompleteMixin.js';
 import { ApplicationCommandOptionWithAutocompleteMixin } from '../mixins/ApplicationCommandOptionWithAutocompleteMixin.js';
+import type { ApplicationCommandOptionWithChoicesData } from '../mixins/ApplicationCommandOptionWithChoicesMixin.js';
 import { ApplicationCommandOptionWithChoicesMixin } from '../mixins/ApplicationCommandOptionWithChoicesMixin.js';
-
-const minLengthValidator = s.number().greaterThanOrEqual(0).lessThanOrEqual(6_000);
-const maxLengthValidator = s.number().greaterThanOrEqual(1).lessThanOrEqual(6_000);
 
 /**
  * A slash command string option.
  */
-@mix(ApplicationCommandOptionWithAutocompleteMixin, ApplicationCommandOptionWithChoicesMixin)
-export class SlashCommandStringOption extends ApplicationCommandOptionBase {
-	/**
-	 * The type of this option.
-	 */
-	public readonly type = ApplicationCommandOptionType.String as const;
-
-	/**
-	 * The maximum length of this option.
-	 */
-	public readonly max_length?: number;
-
-	/**
-	 * The minimum length of this option.
-	 */
-	public readonly min_length?: number;
+export class SlashCommandStringOption extends Mixin(
+	ApplicationCommandOptionBase,
+	ApplicationCommandOptionWithAutocompleteMixin,
+	ApplicationCommandOptionWithChoicesMixin,
+) {
+	protected declare readonly data: ApplicationCommandOptionBaseData &
+		ApplicationCommandOptionWithAutocompleteData &
+		ApplicationCommandOptionWithChoicesData &
+		Partial<Pick<APIApplicationCommandStringOption, 'max_length' | 'min_length'>>;
 
 	/**
 	 * Sets the maximum length of this string option.
@@ -34,10 +26,15 @@ export class SlashCommandStringOption extends ApplicationCommandOptionBase {
 	 * @param max - The maximum length this option can be
 	 */
 	public setMaxLength(max: number): this {
-		maxLengthValidator.parse(max);
+		this.data.max_length = max;
+		return this;
+	}
 
-		Reflect.set(this, 'max_length', max);
-
+	/**
+	 * Clears the maximum length of this string option.
+	 */
+	public clearMaxLength(): this {
+		this.data.max_length = undefined;
 		return this;
 	}
 
@@ -47,27 +44,15 @@ export class SlashCommandStringOption extends ApplicationCommandOptionBase {
 	 * @param min - The minimum length this option can be
 	 */
 	public setMinLength(min: number): this {
-		minLengthValidator.parse(min);
-
-		Reflect.set(this, 'min_length', min);
-
+		this.data.min_length = min;
 		return this;
 	}
 
 	/**
-	 * {@inheritDoc ApplicationCommandOptionBase.toJSON}
+	 * Clears the minimum length of this string option.
 	 */
-	public toJSON(): APIApplicationCommandStringOption {
-		this.runRequiredValidations();
-
-		if (this.autocomplete && Array.isArray(this.choices) && this.choices.length > 0) {
-			throw new RangeError('Autocomplete and choices are mutually exclusive to each other.');
-		}
-
-		return { ...this } as APIApplicationCommandStringOption;
+	public clearMinLength(): this {
+		this.data.min_length = undefined;
+		return this;
 	}
 }
-
-export interface SlashCommandStringOption
-	extends ApplicationCommandOptionWithChoicesMixin<string>,
-		ApplicationCommandOptionWithAutocompleteMixin {}

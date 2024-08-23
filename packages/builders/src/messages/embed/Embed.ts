@@ -8,13 +8,6 @@ import { EmbedFieldBuilder } from './EmbedField.js';
 import { EmbedFooterBuilder } from './EmbedFooter.js';
 
 /**
- * A tuple satisfying the RGB color model.
- *
- * @see {@link https://developer.mozilla.org/docs/Glossary/RGB}
- */
-export type RGBTuple = [red: number, green: number, blue: number];
-
-/**
  * Data stored in the process of constructing an embed.
  */
 export interface EmbedBuilderData extends Omit<APIEmbed, 'author' | 'fields' | 'footer'> {
@@ -214,13 +207,7 @@ export class EmbedBuilder {
 	 *
 	 * @param color - The color to use
 	 */
-	public setColor(color: RGBTuple | number): this {
-		if (Array.isArray(color)) {
-			const [red, green, blue] = color;
-			this.data.color = (red << 16) + (green << 8) + blue;
-			return this;
-		}
-
+	public setColor(color: number): this {
 		this.data.color = color;
 		return this;
 	}
@@ -373,9 +360,9 @@ export class EmbedBuilder {
 		// This already fullfils all of our copy needs
 		const data: APIEmbed = {
 			...this.data,
-			author: this.data.author?.toJSON(),
-			fields: this.data.fields?.map((field) => field.toJSON()),
-			footer: this.data.footer?.toJSON(),
+			author: this.data.author?.toJSON(validationOverride),
+			fields: this.data.fields?.map((field) => field.toJSON(validationOverride)),
+			footer: this.data.footer?.toJSON(validationOverride),
 		};
 
 		if (validationOverride ?? isValidationEnabled()) {

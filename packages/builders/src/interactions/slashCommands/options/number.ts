@@ -1,67 +1,30 @@
-import { s } from '@sapphire/shapeshift';
-import { ApplicationCommandOptionType, type APIApplicationCommandNumberOption } from 'discord-api-types/v10';
-import { mix } from 'ts-mixer';
+import type { APIApplicationCommandOptionChoice } from 'discord-api-types/v10';
+import { ApplicationCommandOptionType } from 'discord-api-types/v10';
+import { Mixin } from 'ts-mixer';
+import type { RestOrArray } from '../../../util/normalizeArray.js';
 import { ApplicationCommandNumericOptionMinMaxValueMixin } from '../mixins/ApplicationCommandNumericOptionMinMaxValueMixin.js';
 import { ApplicationCommandOptionBase } from '../mixins/ApplicationCommandOptionBase.js';
 import { ApplicationCommandOptionWithAutocompleteMixin } from '../mixins/ApplicationCommandOptionWithAutocompleteMixin.js';
 import { ApplicationCommandOptionWithChoicesMixin } from '../mixins/ApplicationCommandOptionWithChoicesMixin.js';
 
-const numberValidator = s.number();
-
 /**
  * A slash command number option.
  */
-@mix(
+export class SlashCommandNumberOption extends Mixin(
+	ApplicationCommandOptionBase,
 	ApplicationCommandNumericOptionMinMaxValueMixin,
 	ApplicationCommandOptionWithAutocompleteMixin,
 	ApplicationCommandOptionWithChoicesMixin,
-)
-export class SlashCommandNumberOption
-	extends ApplicationCommandOptionBase
-	implements ApplicationCommandNumericOptionMinMaxValueMixin
-{
-	/**
-	 * The type of this option.
-	 */
-	public readonly type = ApplicationCommandOptionType.Number as const;
-
-	/**
-	 * {@inheritDoc ApplicationCommandNumericOptionMinMaxValueMixin.setMaxValue}
-	 */
-	public setMaxValue(max: number): this {
-		numberValidator.parse(max);
-
-		Reflect.set(this, 'max_value', max);
-
-		return this;
+) {
+	public constructor() {
+		super(ApplicationCommandOptionType.Number);
 	}
 
-	/**
-	 * {@inheritDoc ApplicationCommandNumericOptionMinMaxValueMixin.setMinValue}
-	 */
-	public setMinValue(min: number): this {
-		numberValidator.parse(min);
-
-		Reflect.set(this, 'min_value', min);
-
-		return this;
+	public override addChoices(...choices: RestOrArray<APIApplicationCommandOptionChoice<number>>): this {
+		return super.addChoices(...choices);
 	}
 
-	/**
-	 * {@inheritDoc ApplicationCommandOptionBase.toJSON}
-	 */
-	public toJSON(): APIApplicationCommandNumberOption {
-		this.runRequiredValidations();
-
-		if (this.autocomplete && Array.isArray(this.choices) && this.choices.length > 0) {
-			throw new RangeError('Autocomplete and choices are mutually exclusive to each other.');
-		}
-
-		return { ...this } as APIApplicationCommandNumberOption;
+	public override setChoices(...choices: RestOrArray<APIApplicationCommandOptionChoice<number>>): this {
+		return super.setChoices(...choices);
 	}
 }
-
-export interface SlashCommandNumberOption
-	extends ApplicationCommandNumericOptionMinMaxValueMixin,
-		ApplicationCommandOptionWithChoicesMixin<number>,
-		ApplicationCommandOptionWithAutocompleteMixin {}
