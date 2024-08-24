@@ -56,7 +56,12 @@ export class EmbedFieldBuilder {
 	 */
 	public toJSON(validationOverride?: boolean): APIEmbedField {
 		const clone = structuredClone(this.data);
-		return embedFieldPredicate.setValidationEnabled(validationOverride ?? isValidationEnabled()).parse(clone);
+
+		if (validationOverride ?? isValidationEnabled()) {
+			embedFieldPredicate.parse(clone);
+		}
+
+		return clone as APIEmbedField;
 	}
 
 	/**

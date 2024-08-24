@@ -72,7 +72,12 @@ export class EmbedFooterBuilder {
 	 */
 	public toJSON(validationOverride?: boolean): APIEmbedFooter {
 		const clone = structuredClone(this.data);
-		return embedFooterPredicate.setValidationEnabled(validationOverride ?? isValidationEnabled()).parse(clone);
+
+		if (validationOverride ?? isValidationEnabled()) {
+			embedFooterPredicate.parse(clone);
+		}
+
+		return clone as APIEmbedFooter;
 	}
 
 	/**

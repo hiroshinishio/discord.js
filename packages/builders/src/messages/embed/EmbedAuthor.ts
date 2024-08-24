@@ -90,7 +90,12 @@ export class EmbedAuthorBuilder {
 	 */
 	public toJSON(validationOverride?: boolean): APIEmbedAuthor {
 		const clone = structuredClone(this.data);
-		return embedAuthorPredicate.setValidationEnabled(() => validationOverride ?? isValidationEnabled()).parse(clone);
+
+		if (validationOverride ?? isValidationEnabled()) {
+			embedAuthorPredicate.parse(clone);
+		}
+
+		return clone as APIEmbedAuthor;
 	}
 
 	/**

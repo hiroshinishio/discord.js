@@ -366,6 +366,10 @@ export class EmbedBuilder {
 			footer: this.data.footer?.toJSON(false),
 		};
 
-		return embedPredicate.setValidationEnabled(() => validationOverride ?? isValidationEnabled()).parse(data);
+		if (validationOverride ?? isValidationEnabled()) {
+			embedPredicate.parse(data);
+		}
+
+		return data;
 	}
 }
