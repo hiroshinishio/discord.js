@@ -97,11 +97,4 @@ export class EmbedAuthorBuilder {
 
 		return clone as APIEmbedAuthor;
 	}
-
-	/**
-	 * Clones this embed field builder.
-	 */
-	public clone(): EmbedAuthorBuilder {
-		return new EmbedAuthorBuilder(this.data);
-	}
 }

@@ -63,11 +63,4 @@ export class EmbedFieldBuilder {
 
 		return clone as APIEmbedField;
 	}
-
-	/**
-	 * Clones this embed field builder.
-	 */
-	public clone(): EmbedFieldBuilder {
-		return new EmbedFieldBuilder(this.data);
-	}
 }

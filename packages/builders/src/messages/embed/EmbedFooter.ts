@@ -79,11 +79,4 @@ export class EmbedFooterBuilder {
 
 		return clone as APIEmbedFooter;
 	}
-
-	/**
-	 * Clones this embed field builder.
-	 */
-	public clone(): EmbedFooterBuilder {
-		return new EmbedFooterBuilder(this.data);
-	}
 }
