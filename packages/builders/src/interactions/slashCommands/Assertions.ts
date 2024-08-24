@@ -1,123 +1,145 @@
-import { s } from '@sapphire/shapeshift';
 import {
+	Locale,
 	ApplicationIntegrationType,
 	InteractionContextType,
-	Locale,
-	type APIApplicationCommandOptionChoice,
-	type LocalizationMap,
+	ApplicationCommandOptionType,
 } from 'discord-api-types/v10';
-import { isValidationEnabled } from '../../util/validation.js';
-import type { ToAPIApplicationCommandOptions } from './SlashCommandBuilder.js';
-import type { SlashCommandSubcommandBuilder, SlashCommandSubcommandGroupBuilder } from './SlashCommandSubcommands.js';
-import type { ApplicationCommandOptionBase } from './mixins/ApplicationCommandOptionBase.js';
+import type { ZodTypeAny } from 'zod';
+import { z } from 'zod';
+import { allowedChannelTypes } from './mixins/ApplicationCommandOptionChannelTypesMixin.js';
 
-const namePredicate = s
+export const namePredicate = z
 	.string()
-	.lengthGreaterThanOrEqual(1)
-	.lengthLessThanOrEqual(32)
-	.regex(/^[\p{Ll}\p{Lm}\p{Lo}\p{N}\p{sc=Devanagari}\p{sc=Thai}_-]+$/u)
-	.setValidationEnabled(isValidationEnabled);
+	.min(1)
+	.max(32)
+	.regex(/^[\p{Ll}\p{Lm}\p{Lo}\p{N}\p{sc=Devanagari}\p{sc=Thai}_-]+$/u);
 
-export function validateName(name: unknown): asserts name is string {
-	namePredicate.parse(name);
-}
+export const descriptionPredicate = z.string().min(1).max(100);
 
-const descriptionPredicate = s
-	.string()
-	.lengthGreaterThanOrEqual(1)
-	.lengthLessThanOrEqual(100)
-	.setValidationEnabled(isValidationEnabled);
-const localePredicate = s.nativeEnum(Locale);
+export const localeMapPredicate = z
+	.object(
+		Object.fromEntries(Object.values(Locale).map((loc) => [loc, z.string().optional()])) as Record<
+			Locale,
+			z.ZodOptional<z.ZodString>
+		>,
+	)
+	.strict();
 
-export function validateDescription(description: unknown): asserts description is string {
-	descriptionPredicate.parse(description);
-}
+export const sharedNameAndDescriptionPredicate = z.object({
+	name: namePredicate,
+	name_localizations: localeMapPredicate.optional(),
+	description: descriptionPredicate,
+	description_localizations: localeMapPredicate.optional(),
+});
 
-const maxArrayLengthPredicate = s.unknown().array().lengthLessThanOrEqual(25).setValidationEnabled(isValidationEnabled);
-export function validateLocale(locale: unknown) {
-	return localePredicate.parse(locale);
-}
+export const numericMixinNumberOptionPredicate = z.object({
+	max_value: z.number().optional(),
+	min_value: z.number().optional(),
+});
 
-export function validateMaxOptionsLength(options: unknown): asserts options is ToAPIApplicationCommandOptions[] {
-	maxArrayLengthPredicate.parse(options);
-}
+export const numericMixinIntegerOptionPredicate = z.object({
+	max_value: z.number().int().optional(),
+	min_value: z.number().int().optional(),
+});
 
-export function validateRequiredParameters(
-	name: string,
-	description: string,
-	options: ToAPIApplicationCommandOptions[],
-) {
-	// Assert name matches all conditions
-	validateName(name);
+export const channelMixinOptionPredicate = z.object({
+	channel_types: z
+		.union(allowedChannelTypes.map((type) => z.literal(type)) as unknown as [ZodTypeAny, ZodTypeAny, ...ZodTypeAny[]])
+		.array()
+		.optional(),
+});
 
-	// Assert description conditions
-	validateDescription(description);
+export const autocompleteMixinOptionPredicate = z.object({
+	autocomplete: z.literal(true),
+	choices: z.union([z.never(), z.never().array(), z.undefined()]),
+});
 
-	// Assert options conditions
-	validateMaxOptionsLength(options);
-}
+export const choiceStringPredicate = z.string().min(1).max(100);
+export const choiceNumberPredicate = z.number().min(Number.NEGATIVE_INFINITY).max(Number.POSITIVE_INFINITY);
+export const choicePredicate = z.object({
+	name: choiceStringPredicate,
+	name_localizations: localeMapPredicate.optional(),
+	value: z.union([choiceStringPredicate, choiceNumberPredicate]),
+});
 
-const booleanPredicate = s.boolean();
+export const choicesOptionMixinPredicate = z.object({
+	autocomplete: z.literal(false).optional(),
+	choices: choicePredicate.array().max(25).optional(),
+});
 
-export function validateDefaultPermission(value: unknown): asserts value is boolean {
-	booleanPredicate.parse(value);
-}
+export const basicOptionTypes = [
+	ApplicationCommandOptionType.Attachment,
+	ApplicationCommandOptionType.Boolean,
+	ApplicationCommandOptionType.Channel,
+	ApplicationCommandOptionType.Integer,
+	ApplicationCommandOptionType.Mentionable,
+	ApplicationCommandOptionType.Number,
+	ApplicationCommandOptionType.Role,
+	ApplicationCommandOptionType.String,
+	ApplicationCommandOptionType.User,
+] as const;
 
-export function validateRequired(required: unknown): asserts required is boolean {
-	booleanPredicate.parse(required);
-}
-
-const choicesLengthPredicate = s.number().lessThanOrEqual(25).setValidationEnabled(isValidationEnabled);
-
-export function validateChoicesLength(amountAdding: number, choices?: APIApplicationCommandOptionChoice[]): void {
-	choicesLengthPredicate.parse((choices?.length ?? 0) + amountAdding);
-}
-
-export function assertReturnOfBuilder<
-	ReturnType extends ApplicationCommandOptionBase | SlashCommandSubcommandBuilder | SlashCommandSubcommandGroupBuilder,
->(input: unknown, ExpectedInstanceOf: new () => ReturnType): asserts input is ReturnType {
-	s.instance(ExpectedInstanceOf).parse(input);
-}
-
-export const localizationMapPredicate = s
-	.object<LocalizationMap>(Object.fromEntries(Object.values(Locale).map((locale) => [locale, s.string().nullish()])))
-	.strict()
-	.nullish()
-	.setValidationEnabled(isValidationEnabled);
-
-export function validateLocalizationMap(value: unknown): asserts value is LocalizationMap {
-	localizationMapPredicate.parse(value);
-}
-
-const dmPermissionPredicate = s.boolean().nullish();
-
-export function validateDMPermission(value: unknown): asserts value is boolean | null | undefined {
-	dmPermissionPredicate.parse(value);
-}
-
-const memberPermissionPredicate = s
-	.union([
-		s.bigint().transform((value) => value.toString()),
-		s
-			.number()
-			.safeInt()
-			.transform((value) => value.toString()),
-		s.string().regex(/^\d+$/),
-	])
-	.nullish();
-
-export function validateDefaultMemberPermissions(permissions: unknown) {
-	return memberPermissionPredicate.parse(permissions);
-}
-
-export function validateNSFW(value: unknown): asserts value is boolean {
-	booleanPredicate.parse(value);
-}
-
-export const contextsPredicate = s.array(
-	s.nativeEnum(InteractionContextType).setValidationEnabled(isValidationEnabled),
+export const basicOptionTypesPredicate = z.union(
+	basicOptionTypes.map((type) => z.literal(type)) as unknown as [ZodTypeAny, ZodTypeAny, ...ZodTypeAny[]],
 );
 
-export const integrationTypesPredicate = s.array(
-	s.nativeEnum(ApplicationIntegrationType).setValidationEnabled(isValidationEnabled),
-);
+export const basicOptionPredicate = sharedNameAndDescriptionPredicate.extend({
+	required: z.boolean().optional(),
+	type: basicOptionTypesPredicate,
+});
+
+export const autocompleteOrChoicesMixinOptionPredicate = z.discriminatedUnion('autocomplete', [
+	autocompleteMixinOptionPredicate,
+	choicesOptionMixinPredicate,
+]);
+
+export const channelOptionPredicate = basicOptionPredicate.merge(channelMixinOptionPredicate);
+
+export const integerOptionPredicate = basicOptionPredicate
+	.merge(numericMixinIntegerOptionPredicate)
+	.and(autocompleteOrChoicesMixinOptionPredicate);
+
+export const numberOptionPredicate = basicOptionPredicate
+	.merge(numericMixinNumberOptionPredicate)
+	.and(autocompleteOrChoicesMixinOptionPredicate);
+
+export const stringOptionPredicate = basicOptionPredicate
+	.extend({
+		max_length: z.number().optional(),
+		min_length: z.number().optional(),
+	})
+	.and(autocompleteOrChoicesMixinOptionPredicate);
+
+export const baseSlashCommandPredicate = sharedNameAndDescriptionPredicate.extend({
+	contexts: z.array(z.nativeEnum(InteractionContextType)).optional(),
+	default_member_permissions: z
+		.string()
+		.refine((str) => !str.includes('.'), { message: 'Permissions must not contain decimal points' })
+		.optional(),
+	integration_types: z.array(z.nativeEnum(ApplicationIntegrationType)).optional(),
+	nsfw: z.boolean().optional(),
+});
+
+// Because you can only add options via builders, there's no need to validate whole objects here otherwise
+export const slashCommandOptionsPredicate = z.union([
+	z.object({ type: basicOptionTypesPredicate }).array(),
+	z.object({ type: z.literal(ApplicationCommandOptionType.Subcommand) }).array(),
+	z.object({ type: z.literal(ApplicationCommandOptionType.SubcommandGroup) }).array(),
+]);
+
+export const slashCommandPredicate = baseSlashCommandPredicate.extend({
+	options: slashCommandOptionsPredicate.optional(),
+});
+
+export const slashCommandSubcommandGroupPredicate = sharedNameAndDescriptionPredicate.extend({
+	type: z.literal(ApplicationCommandOptionType.SubcommandGroup),
+	options: z
+		.array(z.object({ type: z.literal(ApplicationCommandOptionType.Subcommand) }))
+		.min(1)
+		.max(25),
+});
+
+export const slashCommandSubcommandPredicate = sharedNameAndDescriptionPredicate.extend({
+	type: z.literal(ApplicationCommandOptionType.Subcommand),
+	options: z.array(z.object({ type: basicOptionTypesPredicate })).max(25),
+});

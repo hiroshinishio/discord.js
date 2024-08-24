@@ -357,18 +357,15 @@ export class EmbedBuilder {
 	 * @param validationOverride - Force validation to run/not run regardless of your global preference
 	 */
 	public toJSON(validationOverride?: boolean): APIEmbed {
-		// This already fullfils all of our copy needs
-		const data: APIEmbed = {
+		// This already fulfils all of our copy needs
+		const data = {
 			...this.data,
-			author: this.data.author?.toJSON(validationOverride),
-			fields: this.data.fields?.map((field) => field.toJSON(validationOverride)),
-			footer: this.data.footer?.toJSON(validationOverride),
+			// Disable validation because the embedPredicate below will validate those as well
+			author: this.data.author?.toJSON(false),
+			fields: this.data.fields?.map((field) => field.toJSON(false)),
+			footer: this.data.footer?.toJSON(false),
 		};
 
-		if (validationOverride ?? isValidationEnabled()) {
-			embedPredicate.parse(data);
-		}
-
-		return data;
+		return embedPredicate.setValidationEnabled(() => validationOverride ?? isValidationEnabled()).parse(data);
 	}
 }

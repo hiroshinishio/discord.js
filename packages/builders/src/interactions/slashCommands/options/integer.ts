@@ -2,6 +2,7 @@ import type { APIApplicationCommandOptionChoice } from 'discord-api-types/v10';
 import { ApplicationCommandOptionType } from 'discord-api-types/v10';
 import { Mixin } from 'ts-mixer';
 import type { RestOrArray } from '../../../util/normalizeArray.js';
+import { integerOptionPredicate } from '../Assertions.js';
 import { ApplicationCommandNumericOptionMinMaxValueMixin } from '../mixins/ApplicationCommandNumericOptionMinMaxValueMixin.js';
 import { ApplicationCommandOptionBase } from '../mixins/ApplicationCommandOptionBase.js';
 import { ApplicationCommandOptionWithAutocompleteMixin } from '../mixins/ApplicationCommandOptionWithAutocompleteMixin.js';
@@ -16,6 +17,8 @@ export class SlashCommandIntegerOption extends Mixin(
 	ApplicationCommandOptionWithAutocompleteMixin,
 	ApplicationCommandOptionWithChoicesMixin,
 ) {
+	protected override readonly predicate = integerOptionPredicate;
+
 	public constructor() {
 		super(ApplicationCommandOptionType.Integer);
 	}

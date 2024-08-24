@@ -1,5 +1,11 @@
-import type { APIApplicationCommandStringOption } from 'discord-api-types/v10';
+import {
+	ApplicationCommandOptionType,
+	type APIApplicationCommandOptionChoice,
+	type APIApplicationCommandStringOption,
+} from 'discord-api-types/v10';
 import { Mixin } from 'ts-mixer';
+import type { RestOrArray } from '../../../util/normalizeArray.js';
+import { stringOptionPredicate } from '../Assertions.js';
 import type { ApplicationCommandOptionBaseData } from '../mixins/ApplicationCommandOptionBase.js';
 import { ApplicationCommandOptionBase } from '../mixins/ApplicationCommandOptionBase.js';
 import type { ApplicationCommandOptionWithAutocompleteData } from '../mixins/ApplicationCommandOptionWithAutocompleteMixin.js';
@@ -15,10 +21,24 @@ export class SlashCommandStringOption extends Mixin(
 	ApplicationCommandOptionWithAutocompleteMixin,
 	ApplicationCommandOptionWithChoicesMixin,
 ) {
+	protected override readonly predicate = stringOptionPredicate;
+
 	protected declare readonly data: ApplicationCommandOptionBaseData &
 		ApplicationCommandOptionWithAutocompleteData &
 		ApplicationCommandOptionWithChoicesData &
 		Partial<Pick<APIApplicationCommandStringOption, 'max_length' | 'min_length'>>;
+
+	public constructor() {
+		super(ApplicationCommandOptionType.String);
+	}
+
+	public override addChoices(...choices: RestOrArray<APIApplicationCommandOptionChoice<string>>): this {
+		return super.addChoices(...choices);
+	}
+
+	public override setChoices(...choices: RestOrArray<APIApplicationCommandOptionChoice<string>>): this {
+		return super.setChoices(...choices);
+	}
 
 	/**
 	 * Sets the maximum length of this string option.

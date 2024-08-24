@@ -1,5 +1,5 @@
 import { Result, s } from '@sapphire/shapeshift';
-import type { APIEmbedField } from 'discord-api-types/v10';
+import type { APIEmbedFooter, APIEmbedAuthor, APIEmbed, APIEmbedField } from 'discord-api-types/v10';
 
 const namePredicate = s.string().lengthGreaterThanOrEqual(1).lengthLessThanOrEqual(256);
 
@@ -17,21 +17,21 @@ export const embedFieldPredicate = s.object<APIEmbedField>({
 	inline: s.boolean().optional(),
 });
 
-export const embedAuthorPredicate = s.object({
+export const embedAuthorPredicate = s.object<APIEmbedAuthor>({
 	name: namePredicate,
 	icon_url: iconURLPredicate.optional(),
 	proxy_icon_url: iconURLPredicate.optional(),
 	url: URLPredicate.optional(),
 });
 
-export const embedFooterPredicate = s.object({
+export const embedFooterPredicate = s.object<APIEmbedFooter>({
 	text: s.string().lengthGreaterThanOrEqual(1).lengthLessThanOrEqual(2_048),
 	icon_url: iconURLPredicate.optional(),
 	proxy_icon_url: iconURLPredicate.optional(),
 });
 
 export const embedPredicate = s
-	.object({
+	.object<APIEmbed>({
 		title: namePredicate.optional(),
 		description: s.string().lengthGreaterThanOrEqual(1).lengthLessThanOrEqual(4_096).optional(),
 		url: URLPredicate.optional(),

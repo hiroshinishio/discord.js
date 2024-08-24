@@ -1,13 +1,23 @@
-import type { APIApplicationCommandChannelOption } from 'discord-api-types/v10';
+import { ChannelType, type APIApplicationCommandChannelOption } from 'discord-api-types/v10';
 import { normalizeArray, type RestOrArray } from '../../../util/normalizeArray';
 
+export const allowedChannelTypes = [
+	ChannelType.GuildText,
+	ChannelType.GuildVoice,
+	ChannelType.GuildCategory,
+	ChannelType.GuildAnnouncement,
+	ChannelType.AnnouncementThread,
+	ChannelType.PublicThread,
+	ChannelType.PrivateThread,
+	ChannelType.GuildStageVoice,
+	ChannelType.GuildForum,
+	ChannelType.GuildMedia,
+] as const;
+
 /**
- * The type of allowed channel types used for a channel option.
+ * Allowed channel types used for a channel option.
  */
-export type ApplicationCommandOptionAllowedChannelTypes = Exclude<
-	APIApplicationCommandChannelOption['channel_types'],
-	undefined
->[number];
+export type ApplicationCommandOptionAllowedChannelTypes = (typeof allowedChannelTypes)[number];
 
 export interface ApplicationCommandOptionChannelTypesData
 	extends Pick<APIApplicationCommandChannelOption, 'channel_types'> {}

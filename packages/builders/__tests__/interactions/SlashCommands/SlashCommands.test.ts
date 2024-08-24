@@ -4,7 +4,6 @@ import {
 	ChannelType,
 	InteractionContextType,
 	PermissionFlagsBits,
-	type APIApplicationCommandOptionChoice,
 } from 'discord-api-types/v10';
 import { describe, test, expect } from 'vitest';
 import {
@@ -22,8 +21,6 @@ import {
 	SlashCommandSubcommandGroupBuilder,
 	SlashCommandUserOption,
 } from '../../../src/index.js';
-
-const largeArray = Array.from({ length: 26 }, () => 1 as unknown as APIApplicationCommandOptionChoice);
 
 const getBuilder = () => new SlashCommandBuilder();
 const getNamedBuilder = () => getBuilder().setName('example').setDescription('Example command');
@@ -46,79 +43,47 @@ class Collection {
 describe('Slash Commands', () => {
 	describe('Assertions tests', () => {
 		test('GIVEN valid name THEN does not throw error', () => {
-			expect(() => SlashCommandAssertions.validateName('ping')).not.toThrowError();
-			expect(() => SlashCommandAssertions.validateName('hello-world_command')).not.toThrowError();
-			expect(() => SlashCommandAssertions.validateName('aˇ㐆1٢〣²अก')).not.toThrowError();
+			expect(() => SlashCommandAssertions.namePredicate.parse('ping')).not.toThrowError();
+			expect(() => SlashCommandAssertions.namePredicate.parse('hello-world_command')).not.toThrowError();
+			expect(() => SlashCommandAssertions.namePredicate.parse('aˇ㐆1٢〣²अก')).not.toThrowError();
 		});
 
 		test('GIVEN invalid name THEN throw error', () => {
-			expect(() => SlashCommandAssertions.validateName(null)).toThrowError();
+			expect(() => SlashCommandAssertions.namePredicate.parse(null)).toThrowError();
 
 			// Too short of a name
-			expect(() => SlashCommandAssertions.validateName('')).toThrowError();
+			expect(() => SlashCommandAssertions.namePredicate.parse('')).toThrowError();
 
 			// Invalid characters used
-			expect(() => SlashCommandAssertions.validateName('ABC')).toThrowError();
-			expect(() => SlashCommandAssertions.validateName('ABC123$%^&')).toThrowError();
-			expect(() => SlashCommandAssertions.validateName('help ping')).toThrowError();
-			expect(() => SlashCommandAssertions.validateName('🦦')).toThrowError();
+			expect(() => SlashCommandAssertions.namePredicate.parse('ABC')).toThrowError();
+			expect(() => SlashCommandAssertions.namePredicate.parse('ABC123$%^&')).toThrowError();
+			expect(() => SlashCommandAssertions.namePredicate.parse('help ping')).toThrowError();
+			expect(() => SlashCommandAssertions.namePredicate.parse('🦦')).toThrowError();
 
 			// Too long of a name
 			expect(() =>
-				SlashCommandAssertions.validateName('qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm'),
+				SlashCommandAssertions.numberOptionPredicate.parse('qwertyuiopasdfghjklzxcvbnmqwertyuiopasdfghjklzxcvbnm'),
 			).toThrowError();
 		});
 
 		test('GIVEN valid description THEN does not throw error', () => {
-			expect(() => SlashCommandAssertions.validateDescription('This is an OwO moment fur sure!~')).not.toThrowError();
+			expect(() =>
+				SlashCommandAssertions.descriptionPredicate.parse('This is an OwO moment fur sure!~'),
+			).not.toThrowError();
 		});
 
 		test('GIVEN invalid description THEN throw error', () => {
-			expect(() => SlashCommandAssertions.validateDescription(null)).toThrowError();
+			expect(() => SlashCommandAssertions.descriptionPredicate.parse(null)).toThrowError();
 
 			// Too short of a description
-			expect(() => SlashCommandAssertions.validateDescription('')).toThrowError();
+			expect(() => SlashCommandAssertions.descriptionPredicate.parse('')).toThrowError();
 
 			// Too long of a description
 			expect(() =>
-				SlashCommandAssertions.validateDescription(
+				SlashCommandAssertions.descriptionPredicate.parse(
 					'Lorem ipsum dolor sit amet, consectetur adipisicing elit. Magnam autem libero expedita vitae accusamus nostrum ipsam tempore repudiandae deserunt ipsum facilis, velit fugiat facere accusantium, explicabo corporis aliquam non quos.',
 				),
 			).toThrowError();
-		});
-
-		test('GIVEN valid default_permission THEN does not throw error', () => {
-			expect(() => SlashCommandAssertions.validateDefaultPermission(true)).not.toThrowError();
-		});
-
-		test('GIVEN invalid default_permission THEN throw error', () => {
-			expect(() => SlashCommandAssertions.validateDefaultPermission(null)).toThrowError();
-		});
-
-		test('GIVEN valid array of options or choices THEN does not throw error', () => {
-			expect(() => SlashCommandAssertions.validateMaxOptionsLength([])).not.toThrowError();
-
-			expect(() => SlashCommandAssertions.validateChoicesLength(25)).not.toThrowError();
-			expect(() => SlashCommandAssertions.validateChoicesLength(25, [])).not.toThrowError();
-		});
-
-		test('GIVEN invalid options or choices THEN throw error', () => {
-			expect(() => SlashCommandAssertions.validateMaxOptionsLength(null)).toThrowError();
-
-			// Given an array that's too big
-			expect(() => SlashCommandAssertions.validateMaxOptionsLength(largeArray)).toThrowError();
-
-			expect(() => SlashCommandAssertions.validateChoicesLength(1, largeArray)).toThrowError();
-		});
-
-		test('GIVEN valid required parameters THEN does not throw error', () => {
-			expect(() =>
-				SlashCommandAssertions.validateRequiredParameters(
-					'owo',
-					'My fancy command that totally exists, to test assertions',
-					[],
-				),
-			).not.toThrowError();
 		});
 	});
 
@@ -143,7 +108,6 @@ describe('Slash Commands', () => {
 					getBuilder()
 						.setName('example')
 						.setDescription('Example command')
-						.setDMPermission(false)
 						.addBooleanOption((boolean) =>
 							boolean.setName('iscool').setDescription('Are we cool or what?').setRequired(true),
 						)
@@ -186,206 +150,201 @@ describe('Slash Commands', () => {
 			});
 
 			test('GIVEN a builder with invalid autocomplete THEN does throw an error', () => {
-				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addStringOption(getStringOption().setAutocomplete('not a boolean'))).toThrowError();
+				expect(() =>
+					// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
+					getNamedBuilder().addStringOption(getStringOption().setAutocomplete('not a boolean')).toJSON(),
+				).toThrowError();
 			});
 
 			test('GIVEN a builder with both choices and autocomplete THEN does throw an error', () => {
 				expect(() =>
-					getBuilder().addStringOption(
-						getStringOption().setAutocomplete(true).addChoices({ name: 'Fancy Pants', value: 'fp_1' }),
-					),
+					getNamedBuilder()
+						.addStringOption(getStringOption().setAutocomplete(true).addChoices({ name: 'Fancy Pants', value: 'fp_1' }))
+						.toJSON(),
 				).toThrowError();
 
 				expect(() =>
-					getBuilder().addStringOption(
-						getStringOption()
-							.setAutocomplete(true)
-							.addChoices(
-								{ name: 'Fancy Pants', value: 'fp_1' },
-								{ name: 'Fancy Shoes', value: 'fs_1' },
-								{ name: 'The Whole shebang', value: 'all' },
-							),
-					),
+					getNamedBuilder()
+						.addStringOption(
+							getStringOption()
+								.setAutocomplete(true)
+								.addChoices(
+									{ name: 'Fancy Pants', value: 'fp_1' },
+									{ name: 'Fancy Shoes', value: 'fs_1' },
+									{ name: 'The Whole shebang', value: 'all' },
+								),
+						)
+						.toJSON(),
 				).toThrowError();
 
 				expect(() =>
-					getBuilder().addStringOption(
-						getStringOption().addChoices({ name: 'Fancy Pants', value: 'fp_1' }).setAutocomplete(true),
-					),
+					getNamedBuilder()
+						.addStringOption(getStringOption().addChoices({ name: 'Fancy Pants', value: 'fp_1' }).setAutocomplete(true))
+						.toJSON(),
 				).toThrowError();
-
-				expect(() => {
-					const option = getStringOption();
-					Reflect.set(option, 'autocomplete', true);
-					Reflect.set(option, 'choices', [{ name: 'Fancy Pants', value: 'fp_1' }]);
-					return option.toJSON();
-				}).toThrowError();
-
-				expect(() => {
-					const option = getNumberOption();
-					Reflect.set(option, 'autocomplete', true);
-					Reflect.set(option, 'choices', [{ name: 'Fancy Pants', value: 'fp_1' }]);
-					return option.toJSON();
-				}).toThrowError();
-
-				expect(() => {
-					const option = getIntegerOption();
-					Reflect.set(option, 'autocomplete', true);
-					Reflect.set(option, 'choices', [{ name: 'Fancy Pants', value: 'fp_1' }]);
-					return option.toJSON();
-				}).toThrowError();
 			});
 
 			test('GIVEN a builder with valid channel options and channel_types THEN does not throw an error', () => {
 				expect(() =>
-					getBuilder().addChannelOption(
-						getChannelOption().addChannelTypes(ChannelType.GuildText).addChannelTypes([ChannelType.GuildVoice]),
-					),
+					getNamedBuilder()
+						.addChannelOption(
+							getChannelOption().addChannelTypes(ChannelType.GuildText).addChannelTypes([ChannelType.GuildVoice]),
+						)
+						.toJSON(),
 				).not.toThrowError();
 
 				expect(() => {
-					getBuilder().addChannelOption(
-						getChannelOption().addChannelTypes(ChannelType.GuildAnnouncement, ChannelType.GuildText),
-					);
+					getNamedBuilder()
+						.addChannelOption(getChannelOption().addChannelTypes(ChannelType.GuildAnnouncement, ChannelType.GuildText))
+						.toJSON();
 				}).not.toThrowError();
 			});
 
 			test('GIVEN a builder with valid channel options and channel_types THEN does throw an error', () => {
-				// @ts-expect-error: Invalid channel type
-				expect(() => getBuilder().addChannelOption(getChannelOption().addChannelTypes(100))).toThrowError();
+				expect(() =>
+					// @ts-expect-error: Invalid channel type
+					getNamedBuilder().addChannelOption(getChannelOption().addChannelTypes(100)).toJSON(),
+				).toThrowError();
 
-				// @ts-expect-error: Invalid channel types
-				expect(() => getBuilder().addChannelOption(getChannelOption().addChannelTypes(100, 200))).toThrowError();
+				expect(() =>
+					// @ts-expect-error: Invalid channel types
+					getNamedBuilder().addChannelOption(getChannelOption().addChannelTypes(100, 200)).toJSON(),
+				).toThrowError();
 			});
 
 			test('GIVEN a builder with invalid number min/max options THEN does throw an error', () => {
 				// @ts-expect-error: Invalid max value
-				expect(() => getBuilder().addNumberOption(getNumberOption().setMaxValue('test'))).toThrowError();
+				expect(() => getNamedBuilder().addNumberOption(getNumberOption().setMaxValue('test')).toJSON()).toThrowError();
 
-				// @ts-expect-error: Invalid max value
-				expect(() => getBuilder().addIntegerOption(getIntegerOption().setMaxValue('test'))).toThrowError();
+				expect(() =>
+					// @ts-expect-error: Invalid max value
+					getNamedBuilder().addIntegerOption(getIntegerOption().setMaxValue('test')).toJSON(),
+				).toThrowError();
 
 				// @ts-expect-error: Invalid min value
-				expect(() => getBuilder().addNumberOption(getNumberOption().setMinValue('test'))).toThrowError();
+				expect(() => getNamedBuilder().addNumberOption(getNumberOption().setMinValue('test')).toJSON()).toThrowError();
 
-				// @ts-expect-error: Invalid min value
-				expect(() => getBuilder().addIntegerOption(getIntegerOption().setMinValue('test'))).toThrowError();
+				expect(() =>
+					// @ts-expect-error: Invalid min value
+					getNamedBuilder().addIntegerOption(getIntegerOption().setMinValue('test')).toJSON(),
+				).toThrowError();
 
-				expect(() => getBuilder().addIntegerOption(getIntegerOption().setMinValue(1.5))).toThrowError();
+				expect(() => getNamedBuilder().addIntegerOption(getIntegerOption().setMinValue(1.5)).toJSON()).toThrowError();
 			});
 
 			test('GIVEN a builder with valid number min/max options THEN does not throw an error', () => {
-				expect(() => getBuilder().addIntegerOption(getIntegerOption().setMinValue(1))).not.toThrowError();
+				expect(() => getNamedBuilder().addIntegerOption(getIntegerOption().setMinValue(1)).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addNumberOption(getNumberOption().setMinValue(1.5))).not.toThrowError();
+				expect(() => getNamedBuilder().addNumberOption(getNumberOption().setMinValue(1.5)).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addIntegerOption(getIntegerOption().setMaxValue(1))).not.toThrowError();
+				expect(() => getNamedBuilder().addIntegerOption(getIntegerOption().setMaxValue(1)).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addNumberOption(getNumberOption().setMaxValue(1.5))).not.toThrowError();
+				expect(() => getNamedBuilder().addNumberOption(getNumberOption().setMaxValue(1.5)).toJSON()).not.toThrowError();
 			});
 
 			test('GIVEN an already built builder THEN does not throw an error', () => {
-				expect(() => getBuilder().addStringOption(getStringOption())).not.toThrowError();
+				expect(() => getNamedBuilder().addStringOption(getStringOption()).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addIntegerOption(getIntegerOption())).not.toThrowError();
+				expect(() => getNamedBuilder().addIntegerOption(getIntegerOption()).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addNumberOption(getNumberOption())).not.toThrowError();
+				expect(() => getNamedBuilder().addNumberOption(getNumberOption()).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addBooleanOption(getBooleanOption())).not.toThrowError();
+				expect(() => getNamedBuilder().addBooleanOption(getBooleanOption()).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addUserOption(getUserOption())).not.toThrowError();
+				expect(() => getNamedBuilder().addUserOption(getUserOption()).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addChannelOption(getChannelOption())).not.toThrowError();
+				expect(() => getNamedBuilder().addChannelOption(getChannelOption()).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addRoleOption(getRoleOption())).not.toThrowError();
+				expect(() => getNamedBuilder().addRoleOption(getRoleOption()).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addAttachmentOption(getAttachmentOption())).not.toThrowError();
+				expect(() => getNamedBuilder().addAttachmentOption(getAttachmentOption()).toJSON()).not.toThrowError();
 
-				expect(() => getBuilder().addMentionableOption(getMentionableOption())).not.toThrowError();
+				expect(() => getNamedBuilder().addMentionableOption(getMentionableOption()).toJSON()).not.toThrowError();
 			});
 
 			test('GIVEN no valid return for an addOption method THEN throw error', () => {
 				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addBooleanOption()).toThrowError();
-
-				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addBooleanOption(getRoleOption())).toThrowError();
+				expect(() => getNamedBuilder().addBooleanOption().toJSON()).toThrowError();
 			});
 
 			test('GIVEN invalid name THEN throw error', () => {
-				expect(() => getBuilder().setName('TEST_COMMAND')).toThrowError();
-
-				expect(() => getBuilder().setName('ĂĂĂĂĂĂ')).toThrowError();
+				expect(() => getBuilder().setName('TEST_COMMAND').setDescription(':3').toJSON()).toThrowError();
+				expect(() => getBuilder().setName('ĂĂĂĂĂĂ').setDescription(':3').toJSON()).toThrowError();
 			});
 
 			test('GIVEN valid names THEN does not throw error', () => {
-				expect(() => getBuilder().setName('hi_there')).not.toThrowError();
-
-				// Translation: a_command
-				expect(() => getBuilder().setName('o_comandă')).not.toThrowError();
-
-				// Translation: thx (according to GTranslate)
-				expect(() => getBuilder().setName('どうも')).not.toThrowError();
+				expect(() => getBuilder().setName('hi_there').setDescription(':3')).not.toThrowError();
+				expect(() => getBuilder().setName('o_comandă').setDescription(':3')).not.toThrowError();
+				expect(() => getBuilder().setName('どうも').setDescription(':3')).not.toThrowError();
 			});
 
 			test('GIVEN invalid returns for builder THEN throw error', () => {
 				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addBooleanOption(true)).toThrowError();
+				expect(() => getNamedBuilder().addBooleanOption(true).toJSON()).toThrowError();
 
 				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addBooleanOption(null)).toThrowError();
+				expect(() => getNamedBuilder().addBooleanOption(null).toJSON()).toThrowError();
 
 				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addBooleanOption(undefined)).toThrowError();
+				expect(() => getNamedBuilder().addBooleanOption(undefined).toJSON()).toThrowError();
 
-				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addBooleanOption(() => SlashCommandStringOption)).toThrowError();
-				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addBooleanOption(() => new Collection())).toThrowError();
-			});
-
-			test('GIVEN valid builder with defaultPermission false THEN does not throw error', () => {
-				expect(() => getBuilder().setName('foo').setDescription('foo').setDefaultPermission(false)).not.toThrowError();
+				expect(() =>
+					getNamedBuilder()
+						// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
+						.addBooleanOption(() => SlashCommandStringOption)
+						.toJSON(),
+				).toThrowError();
+				expect(() =>
+					getNamedBuilder()
+						// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
+						.addBooleanOption(() => new Collection())
+						.toJSON(),
+				).toThrowError();
 			});
 
 			test('GIVEN an option that is autocompletable and has choices, THEN passing nothing to setChoices should not throw an error', () => {
 				expect(() =>
-					getBuilder().addStringOption(getStringOption().setAutocomplete(true).setChoices()),
+					getNamedBuilder().addStringOption(getStringOption().setAutocomplete(true).setChoices()).toJSON(),
 				).not.toThrowError();
 			});
 
 			test('GIVEN an option that is autocompletable, THEN setting choices should throw an error', () => {
 				expect(() =>
-					getBuilder().addStringOption(
-						getStringOption().setAutocomplete(true).setChoices({ name: 'owo', value: 'uwu' }),
-					),
+					getNamedBuilder()
+						.addStringOption(getStringOption().setAutocomplete(true).setChoices({ name: 'owo', value: 'uwu' }))
+						.toJSON(),
 				).toThrowError();
 			});
 
 			test('GIVEN an option, THEN setting choices should not throw an error', () => {
 				expect(() =>
-					getBuilder().addStringOption(getStringOption().setChoices({ name: 'owo', value: 'uwu' })),
+					getNamedBuilder()
+						.addStringOption(getStringOption().setChoices({ name: 'owo', value: 'uwu' }))
+						.toJSON(),
 				).not.toThrowError();
 			});
 
 			test('GIVEN valid builder with NSFW, THEN does not throw error', () => {
-				expect(() => getBuilder().setName('foo').setDescription('foo').setNSFW(true)).not.toThrowError();
+				expect(() => getNamedBuilder().setName('foo').setDescription('foo').setNSFW(true).toJSON()).not.toThrowError();
 			});
 		});
 
 		describe('Builder with subcommand (group) options', () => {
 			test('GIVEN builder with subcommand group THEN does not throw error', () => {
 				expect(() =>
-					getNamedBuilder().addSubcommandGroup((group) => group.setName('group').setDescription('Group us together!')),
+					getNamedBuilder()
+						.addSubcommandGroup((group) =>
+							group.setName('group').setDescription('Group us together!').addSubcommand(getSubcommand()),
+						)
+						.toJSON(),
 				).not.toThrowError();
 			});
 
 			test('GIVEN builder with subcommand THEN does not throw error', () => {
 				expect(() =>
-					getNamedBuilder().addSubcommand((subcommand) =>
-						subcommand.setName('boop').setDescription('Boops a fellow nerd (you)'),
-					),
+					getNamedBuilder()
+						.addSubcommand((subcommand) => subcommand.setName('boop').setDescription('Boops a fellow nerd (you)'))
+						.toJSON(),
 				).not.toThrowError();
 			});
 
@@ -396,51 +355,53 @@ describe('Slash Commands', () => {
 						.setDescription('description')
 						.addSubcommand((option) => option.setName('ye').setDescription('ye'))
 						.addSubcommand((option) => option.setName('no').setDescription('no'))
-						.setDMPermission(false)
-						.setDefaultMemberPermissions(1n),
+						.setDefaultMemberPermissions(1n)
+						.toJSON(),
 				).not.toThrowError();
 			});
 
 			test('GIVEN builder with already built subcommand group THEN does not throw error', () => {
-				expect(() => getNamedBuilder().addSubcommandGroup(getSubcommandGroup())).not.toThrowError();
+				expect(() =>
+					getNamedBuilder().addSubcommandGroup(getSubcommandGroup().addSubcommand(getSubcommand())).toJSON(),
+				).not.toThrowError();
 			});
 
 			test('GIVEN builder with already built subcommand THEN does not throw error', () => {
-				expect(() => getNamedBuilder().addSubcommand(getSubcommand())).not.toThrowError();
+				expect(() => getNamedBuilder().addSubcommand(getSubcommand()).toJSON()).not.toThrowError();
 			});
 
 			test('GIVEN builder with already built subcommand with options THEN does not throw error', () => {
 				expect(() =>
-					getNamedBuilder().addSubcommand(getSubcommand().addBooleanOption(getBooleanOption())),
+					getNamedBuilder().addSubcommand(getSubcommand().addBooleanOption(getBooleanOption())).toJSON(),
 				).not.toThrowError();
 			});
 
 			test('GIVEN builder with a subcommand that tries to add an invalid result THEN throw error', () => {
 				expect(() =>
 					// @ts-expect-error: Checking if check works JS-side too
-					getNamedBuilder().addSubcommand(getSubcommand()).addInteger(getInteger()),
+					getNamedBuilder().addSubcommand(getSubcommand()).addIntegerOption(getInteger()).toJSON(),
 				).toThrowError();
 			});
 
 			test('GIVEN no valid return for an addSubcommand(Group) method THEN throw error', () => {
 				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addSubcommandGroup()).toThrowError();
+				expect(() => getNamedBuilder().addSubcommandGroup().toJSON()).toThrowError();
 
 				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addSubcommand()).toThrowError();
+				expect(() => getNamedBuilder().addSubcommand().toJSON()).toThrowError();
 
 				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getBuilder().addSubcommand(getSubcommandGroup())).toThrowError();
+				expect(() => getNamedBuilder().addSubcommand(getSubcommandGroup()).toJSON()).toThrowError();
 			});
 		});
 
 		describe('Subcommand group builder', () => {
 			test('GIVEN no valid subcommand THEN throw error', () => {
 				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getSubcommandGroup().addSubcommand()).toThrowError();
+				expect(() => getSubcommandGroup().addSubcommand().toJSON()).toThrowError();
 
 				// @ts-expect-error: Checking if not providing anything, or an invalid return type causes an error
-				expect(() => getSubcommandGroup().addSubcommand(getSubcommandGroup())).toThrowError();
+				expect(() => getSubcommandGroup().addSubcommand(getSubcommandGroup()).toJSON()).toThrowError();
 			});
 
 			test('GIVEN a valid subcommand THEN does not throw an error', () => {
@@ -472,121 +433,127 @@ describe('Slash Commands', () => {
 
 			test('GIVEN invalid name localizations THEN does throw error', () => {
 				// @ts-expect-error: Invalid localization
-				expect(() => getBuilder().setNameLocalization('en-U', 'foobar')).toThrowError();
+				expect(() => getNamedBuilder().setNameLocalization('en-U', 'foobar').toJSON()).toThrowError();
 				// @ts-expect-error: Invalid localization
-				expect(() => getBuilder().setNameLocalizations({ 'en-U': 'foobar' })).toThrowError();
+				expect(() => getNamedBuilder().setNameLocalizations({ 'en-U': 'foobar' }).toJSON()).toThrowError();
 			});
 
 			test('GIVEN valid name localizations THEN valid data is stored', () => {
-				expect(getBuilder().setNameLocalization('en-US', 'foobar').name_localizations).toEqual(expectedSingleLocale);
-				expect(getBuilder().setNameLocalizations({ 'en-US': 'foobar', bg: 'test' }).name_localizations).toEqual(
-					expectedMultipleLocales,
+				expect(getNamedBuilder().setNameLocalization('en-US', 'foobar').toJSON().name_localizations).toEqual(
+					expectedSingleLocale,
 				);
-				expect(getBuilder().setNameLocalizations(null).name_localizations).toBeNull();
-				expect(getBuilder().setNameLocalization('en-US', null).name_localizations).toEqual({
-					'en-US': null,
+				expect(
+					getNamedBuilder().setNameLocalizations({ 'en-US': 'foobar', bg: 'test' }).toJSON().name_localizations,
+				).toEqual(expectedMultipleLocales);
+				expect(getNamedBuilder().clearNameLocalizations().toJSON().name_localizations).toBeUndefined();
+				expect(getNamedBuilder().clearNameLocalization('en-US').toJSON().name_localizations).toEqual({
+					'en-US': undefined,
 				});
 			});
 
 			test('GIVEN valid description localizations THEN does not throw error', () => {
-				expect(() => getBuilder().setDescriptionLocalization('en-US', 'foobar')).not.toThrowError();
-				expect(() => getBuilder().setDescriptionLocalizations({ 'en-US': 'foobar' })).not.toThrowError();
+				expect(() => getNamedBuilder().setDescriptionLocalization('en-US', 'foobar').toJSON()).not.toThrowError();
+				expect(() => getNamedBuilder().setDescriptionLocalizations({ 'en-US': 'foobar' }).toJSON()).not.toThrowError();
 			});
 
 			test('GIVEN invalid description localizations THEN does throw error', () => {
 				// @ts-expect-error: Invalid localization description
-				expect(() => getBuilder().setDescriptionLocalization('en-U', 'foobar')).toThrowError();
+				expect(() => getNamedBuilder().setDescriptionLocalization('en-U', 'foobar').toJSON()).toThrowError();
 				// @ts-expect-error: Invalid localization description
-				expect(() => getBuilder().setDescriptionLocalizations({ 'en-U': 'foobar' })).toThrowError();
+				expect(() => getNamedBuilder().setDescriptionLocalizations({ 'en-U': 'foobar' }).toJSON()).toThrowError();
 			});
 
 			test('GIVEN valid description localizations THEN valid data is stored', () => {
-				expect(getBuilder().setDescriptionLocalization('en-US', 'foobar').description_localizations).toEqual(
-					expectedSingleLocale,
-				);
 				expect(
-					getBuilder().setDescriptionLocalizations({ 'en-US': 'foobar', bg: 'test' }).description_localizations,
+					getNamedBuilder().setDescriptionLocalization('en-US', 'foobar').toJSON(false).description_localizations,
+				).toEqual(expectedSingleLocale);
+				expect(
+					getNamedBuilder().setDescriptionLocalizations({ 'en-US': 'foobar', bg: 'test' }).toJSON(false)
+						.description_localizations,
 				).toEqual(expectedMultipleLocales);
-				expect(getBuilder().setDescriptionLocalizations(null).description_localizations).toBeNull();
-				expect(getBuilder().setDescriptionLocalization('en-US', null).description_localizations).toEqual({
-					'en-US': null,
-				});
+				expect(
+					getNamedBuilder().clearDescriptionLocalizations().toJSON(false).description_localizations,
+				).toBeUndefined();
+				expect(getNamedBuilder().clearDescriptionLocalization('en-US').toJSON(false).description_localizations).toEqual(
+					{
+						'en-US': undefined,
+					},
+				);
 			});
 		});
 
 		describe('permissions', () => {
 			test('GIVEN valid permission string THEN does not throw error', () => {
-				expect(() => getBuilder().setDefaultMemberPermissions('1')).not.toThrowError();
+				expect(() => getNamedBuilder().setDefaultMemberPermissions('1')).not.toThrowError();
 			});
 
 			test('GIVEN valid permission bitfield THEN does not throw error', () => {
 				expect(() =>
-					getBuilder().setDefaultMemberPermissions(PermissionFlagsBits.AddReactions | PermissionFlagsBits.AttachFiles),
+					getNamedBuilder().setDefaultMemberPermissions(
+						PermissionFlagsBits.AddReactions | PermissionFlagsBits.AttachFiles,
+					),
 				).not.toThrowError();
 			});
 
 			test('GIVEN null permissions THEN does not throw error', () => {
-				expect(() => getBuilder().setDefaultMemberPermissions(null)).not.toThrowError();
+				expect(() => getNamedBuilder().clearDefaultMemberPermissions()).not.toThrowError();
 			});
 
 			test('GIVEN invalid inputs THEN does throw error', () => {
-				expect(() => getBuilder().setDefaultMemberPermissions('1.1')).toThrowError();
-
-				expect(() => getBuilder().setDefaultMemberPermissions(1.1)).toThrowError();
+				expect(() => getNamedBuilder().setDefaultMemberPermissions('1.1').toJSON()).toThrowError();
+				expect(() => getNamedBuilder().setDefaultMemberPermissions(1.1).toJSON()).toThrowError();
 			});
 
 			test('GIVEN valid permission with options THEN does not throw error', () => {
 				expect(() =>
-					getBuilder().addBooleanOption(getBooleanOption()).setDefaultMemberPermissions('1'),
+					getNamedBuilder().addBooleanOption(getBooleanOption()).setDefaultMemberPermissions('1').toJSON(),
 				).not.toThrowError();
 
-				expect(() => getBuilder().addChannelOption(getChannelOption()).setDMPermission(false)).not.toThrowError();
+				expect(() => getNamedBuilder().addChannelOption(getChannelOption())).not.toThrowError();
 			});
 		});
 
 		describe('contexts', () => {
 			test('GIVEN a builder with valid contexts THEN does not throw an error', () => {
 				expect(() =>
-					getBuilder().setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]),
+					getNamedBuilder().setContexts([InteractionContextType.Guild, InteractionContextType.BotDM]).toJSON(),
 				).not.toThrowError();
 
 				expect(() =>
-					getBuilder().setContexts(InteractionContextType.Guild, InteractionContextType.BotDM),
+					getNamedBuilder().setContexts(InteractionContextType.Guild, InteractionContextType.BotDM).toJSON(),
 				).not.toThrowError();
 			});
 
 			test('GIVEN a builder with invalid contexts THEN does throw an error', () => {
 				// @ts-expect-error: Invalid contexts
-				expect(() => getBuilder().setContexts(999)).toThrowError();
+				expect(() => getNamedBuilder().setContexts(999).toJSON()).toThrowError();
 
 				// @ts-expect-error: Invalid contexts
-				expect(() => getBuilder().setContexts([999, 998])).toThrowError();
+				expect(() => getNamedBuilder().setContexts([999, 998]).toJSON()).toThrowError();
 			});
 		});
 
 		describe('integration types', () => {
 			test('GIVEN a builder with valid integraton types THEN does not throw an error', () => {
 				expect(() =>
-					getBuilder().setIntegrationTypes([
-						ApplicationIntegrationType.GuildInstall,
-						ApplicationIntegrationType.UserInstall,
-					]),
+					getNamedBuilder()
+						.setIntegrationTypes([ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall])
+						.toJSON(),
 				).not.toThrowError();
 
 				expect(() =>
-					getBuilder().setIntegrationTypes(
-						ApplicationIntegrationType.GuildInstall,
-						ApplicationIntegrationType.UserInstall,
-					),
+					getNamedBuilder()
+						.setIntegrationTypes(ApplicationIntegrationType.GuildInstall, ApplicationIntegrationType.UserInstall)
+						.toJSON(),
 				).not.toThrowError();
 			});
 
 			test('GIVEN a builder with invalid integration types THEN does throw an error', () => {
 				// @ts-expect-error: Invalid integration types
-				expect(() => getBuilder().setIntegrationTypes(999)).toThrowError();
+				expect(() => getNamedBuilder().setIntegrationTypes(999).toJSON()).toThrowError();
 
 				// @ts-expect-error: Invalid integration types
-				expect(() => getBuilder().setIntegrationTypes([999, 998])).toThrowError();
+				expect(() => getNamedBuilder().setIntegrationTypes([999, 998]).toJSON()).toThrowError();
 			});
 		});
 	});

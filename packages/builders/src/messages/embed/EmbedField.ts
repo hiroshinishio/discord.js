@@ -55,11 +55,8 @@ export class EmbedFieldBuilder {
 	 * @param validationOverride - Force validation to run/not run regardless of your global preference
 	 */
 	public toJSON(validationOverride?: boolean): APIEmbedField {
-		if (validationOverride ?? isValidationEnabled()) {
-			embedFieldPredicate.parse(this.data);
-		}
-
-		return structuredClone(this.data) as APIEmbedField;
+		const clone = structuredClone(this.data);
+		return embedFieldPredicate.setValidationEnabled(validationOverride ?? isValidationEnabled()).parse(clone);
 	}
 
 	/**

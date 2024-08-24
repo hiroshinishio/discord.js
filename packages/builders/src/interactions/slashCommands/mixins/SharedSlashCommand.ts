@@ -7,7 +7,13 @@ import type {
 import type { RestOrArray } from '../../../util/normalizeArray.js';
 import { normalizeArray } from '../../../util/normalizeArray.js';
 
-export interface SharedSlashCommandData extends Partial<RESTPostAPIChatInputApplicationCommandsJSONBody> {}
+export interface SharedSlashCommandData
+	extends Partial<
+		Pick<
+			RESTPostAPIChatInputApplicationCommandsJSONBody,
+			'contexts' | 'default_member_permissions' | 'integration_types' | 'nsfw'
+		>
+	> {}
 
 /**
  * This mixin holds symbols that can be shared in slashcommands independent of options or subcommands.

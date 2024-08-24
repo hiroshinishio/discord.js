@@ -101,7 +101,6 @@ describe('Application Command toJSON() results', () => {
 			max_value: 10,
 			min_value: -1,
 			autocomplete: true,
-			// TODO
 			choices: [],
 		});
 

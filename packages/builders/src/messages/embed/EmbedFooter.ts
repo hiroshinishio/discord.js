@@ -71,11 +71,8 @@ export class EmbedFooterBuilder {
 	 * @param validationOverride - Force validation to run/not run regardless of your global preference
 	 */
 	public toJSON(validationOverride?: boolean): APIEmbedFooter {
-		if (validationOverride ?? isValidationEnabled()) {
-			embedFooterPredicate.parse(this.data);
-		}
-
-		return structuredClone(this.data) as APIEmbedFooter;
+		const clone = structuredClone(this.data);
+		return embedFooterPredicate.setValidationEnabled(validationOverride ?? isValidationEnabled()).parse(clone);
 	}
 
 	/**

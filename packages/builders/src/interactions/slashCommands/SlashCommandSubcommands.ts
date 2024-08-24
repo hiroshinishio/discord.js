@@ -1,36 +1,26 @@
-import {
-	ApplicationCommandOptionType,
-	type APIApplicationCommandSubcommandGroupOption,
-	type APIApplicationCommandSubcommandOption,
+import type {
+	APIApplicationCommandSubcommandOption,
+	APIApplicationCommandSubcommandGroupOption,
 } from 'discord-api-types/v10';
-import { mix } from 'ts-mixer';
-import { assertReturnOfBuilder, validateMaxOptionsLength, validateRequiredParameters } from './Assertions.js';
-import type { ToAPIApplicationCommandOptions } from './SlashCommandBuilder.js';
-import type { ApplicationCommandOptionBase } from './mixins/ApplicationCommandOptionBase.js';
+import { ApplicationCommandOptionType } from 'discord-api-types/v10';
+import { Mixin } from 'ts-mixer';
+import { isValidationEnabled } from '../../util/validation.js';
+import { slashCommandSubcommandGroupPredicate, slashCommandSubcommandPredicate } from './Assertions.js';
+import type { SharedNameAndDescriptionData } from './mixins/SharedNameAndDescription.js';
 import { SharedNameAndDescription } from './mixins/SharedNameAndDescription.js';
 import { SharedSlashCommandOptions } from './mixins/SharedSlashCommandOptions.js';
+
+export interface SlashCommandSubcommandGroupData {
+	options?: SlashCommandSubcommandBuilder[];
+}
 
 /**
  * Represents a folder for subcommands.
  *
  * @see {@link https://discord.com/developers/docs/interactions/application-commands#subcommands-and-subcommand-groups}
  */
-@mix(SharedNameAndDescription)
-export class SlashCommandSubcommandGroupBuilder implements ToAPIApplicationCommandOptions {
-	/**
-	 * The name of this subcommand group.
-	 */
-	public readonly name: string = undefined!;
-
-	/**
-	 * The description of this subcommand group.
-	 */
-	public readonly description: string = undefined!;
-
-	/**
-	 * The subcommands within this subcommand group.
-	 */
-	public readonly options: SlashCommandSubcommandBuilder[] = [];
+export class SlashCommandSubcommandGroupBuilder extends SharedNameAndDescription {
+	protected declare readonly data: SharedNameAndDescriptionData & SlashCommandSubcommandGroupData;
 
 	/**
 	 * Adds a new subcommand to this group.
@@ -42,20 +32,11 @@ export class SlashCommandSubcommandGroupBuilder implements ToAPIApplicationComma
 			| SlashCommandSubcommandBuilder
 			| ((subcommandGroup: SlashCommandSubcommandBuilder) => SlashCommandSubcommandBuilder),
 	) {
-		const { options } = this;
-
-		// First, assert options conditions - we cannot have more than 25 options
-		validateMaxOptionsLength(options);
-
-		// Get the final result
 		// eslint-disable-next-line @typescript-eslint/no-use-before-define
 		const result = typeof input === 'function' ? input(new SlashCommandSubcommandBuilder()) : input;
 
-		// eslint-disable-next-line @typescript-eslint/no-use-before-define
-		assertReturnOfBuilder(result, SlashCommandSubcommandBuilder);
-
-		// Push it
-		options.push(result);
+		this.data.options ??= [];
+		this.data.options.push(result);
 
 		return this;
 	}
@@ -63,69 +44,53 @@ export class SlashCommandSubcommandGroupBuilder implements ToAPIApplicationComma
 	/**
 	 * Serializes this builder to API-compatible JSON data.
 	 *
-	 * @remarks
-	 * This method runs validations on the data before serializing it.
-	 * As such, it may throw an error if the data is invalid.
+	 * Note that by disabling validation, there is no guarantee that the resulting object will be valid.
+	 *
+	 * @param validationOverride - Force validation to run/not run regardless of your global preference
 	 */
-	public toJSON(): APIApplicationCommandSubcommandGroupOption {
-		validateRequiredParameters(this.name, this.description, this.options);
+	public toJSON(validationOverride?: boolean): APIApplicationCommandSubcommandGroupOption {
+		const { options, ...rest } = this.data;
 
-		return {
-			type: ApplicationCommandOptionType.SubcommandGroup,
-			name: this.name,
-			name_localizations: this.name_localizations,
-			description: this.description,
-			description_localizations: this.description_localizations,
-			options: this.options.map((option) => option.toJSON()),
+		const data = {
+			type: ApplicationCommandOptionType.SubcommandGroup as const,
+			...(structuredClone(rest) as Omit<APIApplicationCommandSubcommandGroupOption, 'type'>),
+			options: options?.map((option) => option.toJSON(validationOverride)) ?? [],
 		};
+
+		if (validationOverride ?? isValidationEnabled()) {
+			slashCommandSubcommandGroupPredicate.parse(data);
+		}
+
+		return data;
 	}
 }
-
-export interface SlashCommandSubcommandGroupBuilder extends SharedNameAndDescription {}
 
 /**
  * A builder that creates API-compatible JSON data for slash command subcommands.
  *
  * @see {@link https://discord.com/developers/docs/interactions/application-commands#subcommands-and-subcommand-groups}
  */
-@mix(SharedNameAndDescription, SharedSlashCommandOptions)
-export class SlashCommandSubcommandBuilder implements ToAPIApplicationCommandOptions {
-	/**
-	 * The name of this subcommand.
-	 */
-	public readonly name: string = undefined!;
-
-	/**
-	 * The description of this subcommand.
-	 */
-	public readonly description: string = undefined!;
-
-	/**
-	 * The options within this subcommand.
-	 */
-	public readonly options: ApplicationCommandOptionBase[] = [];
-
+export class SlashCommandSubcommandBuilder extends Mixin(SharedNameAndDescription, SharedSlashCommandOptions) {
 	/**
 	 * Serializes this builder to API-compatible JSON data.
 	 *
-	 * @remarks
-	 * This method runs validations on the data before serializing it.
-	 * As such, it may throw an error if the data is invalid.
+	 * Note that by disabling validation, there is no guarantee that the resulting object will be valid.
+	 *
+	 * @param validationOverride - Force validation to run/not run regardless of your global preference
 	 */
-	public toJSON(): APIApplicationCommandSubcommandOption {
-		validateRequiredParameters(this.name, this.description, this.options);
+	public toJSON(validationOverride?: boolean): APIApplicationCommandSubcommandOption {
+		const { options, ...rest } = this.data;
 
-		return {
-			type: ApplicationCommandOptionType.Subcommand,
-			name: this.name,
-			name_localizations: this.name_localizations,
-			description: this.description,
-			description_localizations: this.description_localizations,
-			options: this.options.map((option) => option.toJSON()),
+		const data = {
+			type: ApplicationCommandOptionType.Subcommand as const,
+			...(structuredClone(rest) as Omit<APIApplicationCommandSubcommandOption, 'type'>),
+			options: options?.map((option) => option.toJSON(validationOverride)) ?? [],
 		};
+
+		if (validationOverride ?? isValidationEnabled()) {
+			slashCommandSubcommandPredicate.parse(data);
+		}
+
+		return data;
 	}
 }
-
-export interface SlashCommandSubcommandBuilder
-	extends SharedNameAndDescription,
-		SharedSlashCommandOptions<SlashCommandSubcommandBuilder> {}

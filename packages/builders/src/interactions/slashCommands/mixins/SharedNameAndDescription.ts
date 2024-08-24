@@ -9,7 +9,7 @@ export interface SharedNameAndDescriptionData
  * This mixin holds name and description symbols for slash commands.
  */
 export class SharedNameAndDescription {
-	protected declare readonly data: SharedNameAndDescriptionData;
+	protected readonly data: SharedNameAndDescriptionData = {};
 
 	/**
 	 * Sets the name of this command.
@@ -39,8 +39,8 @@ export class SharedNameAndDescription {
 	 */
 	public setNameLocalization(locale: LocaleString, localizedName: string) {
 		this.data.name_localizations ??= {};
-
 		this.data.name_localizations[locale] = localizedName;
+
 		return this;
 	}
 
@@ -50,9 +50,8 @@ export class SharedNameAndDescription {
 	 * @param locale - The locale to clear
 	 */
 	public clearNameLocalization(locale: LocaleString) {
-		if (this.data.name_localizations) {
-			this.data.name_localizations[locale] = null;
-		}
+		this.data.name_localizations ??= {};
+		this.data.name_localizations[locale] = undefined;
 
 		return this;
 	}
@@ -73,7 +72,7 @@ export class SharedNameAndDescription {
 	}
 
 	public clearNameLocalizations() {
-		this.data.name_localizations = null;
+		this.data.name_localizations = undefined;
 		return this;
 	}
 
@@ -85,8 +84,8 @@ export class SharedNameAndDescription {
 	 */
 	public setDescriptionLocalization(locale: LocaleString, localizedDescription: string) {
 		this.data.description_localizations ??= {};
-
 		this.data.description_localizations[locale] = localizedDescription;
+
 		return this;
 	}
 
@@ -96,9 +95,8 @@ export class SharedNameAndDescription {
 	 * @param locale - The locale to clear
 	 */
 	public clearDescriptionLocalization(locale: LocaleString) {
-		if (this.data.description_localizations) {
-			this.data.description_localizations[locale] = null;
-		}
+		this.data.description_localizations ??= {};
+		this.data.description_localizations[locale] = undefined;
 
 		return this;
 	}
@@ -119,7 +117,7 @@ export class SharedNameAndDescription {
 	}
 
 	public clearDescriptionLocalizations() {
-		this.data.description_localizations = null;
+		this.data.description_localizations = undefined;
 		return this;
 	}
 }

@@ -89,11 +89,8 @@ export class EmbedAuthorBuilder {
 	 * @param validationOverride - Force validation to run/not run regardless of your global preference
 	 */
 	public toJSON(validationOverride?: boolean): APIEmbedAuthor {
-		if (validationOverride ?? isValidationEnabled()) {
-			embedAuthorPredicate.parse(this.data);
-		}
-
-		return structuredClone(this.data) as APIEmbedAuthor;
+		const clone = structuredClone(this.data);
+		return embedAuthorPredicate.setValidationEnabled(() => validationOverride ?? isValidationEnabled()).parse(clone);
 	}
 
 	/**
