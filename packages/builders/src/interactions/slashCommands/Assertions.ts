@@ -1,11 +1,11 @@
 import {
-	Locale,
 	ApplicationIntegrationType,
 	InteractionContextType,
 	ApplicationCommandOptionType,
 } from 'discord-api-types/v10';
 import type { ZodTypeAny } from 'zod';
 import { z } from 'zod';
+import { localeMapPredicate, memberPermissionsPredicate } from '../Assertions.js';
 import { allowedChannelTypes } from './mixins/ApplicationCommandOptionChannelTypesMixin.js';
 
 export const namePredicate = z
@@ -15,15 +15,6 @@ export const namePredicate = z
 	.regex(/^[\p{Ll}\p{Lm}\p{Lo}\p{N}\p{sc=Devanagari}\p{sc=Thai}_-]+$/u);
 
 export const descriptionPredicate = z.string().min(1).max(100);
-
-export const localeMapPredicate = z
-	.object(
-		Object.fromEntries(Object.values(Locale).map((loc) => [loc, z.string().optional()])) as Record<
-			Locale,
-			z.ZodOptional<z.ZodString>
-		>,
-	)
-	.strict();
 
 export const sharedNameAndDescriptionPredicate = z.object({
 	name: namePredicate,
@@ -112,10 +103,7 @@ export const stringOptionPredicate = basicOptionPredicate
 
 export const baseSlashCommandPredicate = sharedNameAndDescriptionPredicate.extend({
 	contexts: z.array(z.nativeEnum(InteractionContextType)).optional(),
-	default_member_permissions: z
-		.string()
-		.refine((str) => !str.includes('.'), { message: 'Permissions must not contain decimal points' })
-		.optional(),
+	default_member_permissions: memberPermissionsPredicate.optional(),
 	integration_types: z.array(z.nativeEnum(ApplicationIntegrationType)).optional(),
 	nsfw: z.boolean().optional(),
 });

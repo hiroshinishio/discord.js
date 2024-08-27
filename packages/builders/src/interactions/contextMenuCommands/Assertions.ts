@@ -1,65 +1,26 @@
-import { s } from '@sapphire/shapeshift';
 import { ApplicationCommandType, ApplicationIntegrationType, InteractionContextType } from 'discord-api-types/v10';
+import { z } from 'zod';
 import { isValidationEnabled } from '../../util/validation.js';
+import { localeMapPredicate, memberPermissionsPredicate } from '../Assertions.js';
 import type { ContextMenuCommandType } from './ContextMenuCommandBuilder.js';
 
-const namePredicate = s
+const namePredicate = z
 	.string()
-	.lengthGreaterThanOrEqual(1)
-	.lengthLessThanOrEqual(32)
+	.min(1)
+	.max(32)
 	// eslint-disable-next-line prefer-named-capture-group
-	.regex(/^( *[\p{P}\p{L}\p{N}\p{sc=Devanagari}\p{sc=Thai}]+ *)+$/u)
-	.setValidationEnabled(isValidationEnabled);
-const typePredicate = s
-	.union([s.literal(ApplicationCommandType.User), s.literal(ApplicationCommandType.Message)])
-	.setValidationEnabled(isValidationEnabled);
-const booleanPredicate = s.boolean();
+	.regex(/^( *[\p{P}\p{L}\p{N}\p{sc=Devanagari}\p{sc=Thai}]+ *)+$/u);
+const typePredicate = z.union([z.literal(ApplicationCommandType.User), z.literal(ApplicationCommandType.Message)]);
 
-export function validateDefaultPermission(value: unknown): asserts value is boolean {
-	booleanPredicate.parse(value);
-}
+const contextsPredicate = z.array(z.nativeEnum(InteractionContextType));
+const integrationTypesPredicate = z.array(z.nativeEnum(ApplicationIntegrationType));
 
-export function validateName(name: unknown): asserts name is string {
-	namePredicate.parse(name);
-}
-
-export function validateType(type: unknown): asserts type is ContextMenuCommandType {
-	typePredicate.parse(type);
-}
-
-export function validateRequiredParameters(name: string, type: number) {
-	// Assert name matches all conditions
-	validateName(name);
-
-	// Assert type is valid
-	validateType(type);
-}
-
-const dmPermissionPredicate = s.boolean().nullish();
-
-export function validateDMPermission(value: unknown): asserts value is boolean | null | undefined {
-	dmPermissionPredicate.parse(value);
-}
-
-const memberPermissionPredicate = s
-	.union([
-		s.bigint().transform((value) => value.toString()),
-		s
-			.number()
-			.safeInt()
-			.transform((value) => value.toString()),
-		s.string().regex(/^\d+$/),
-	])
-	.nullish();
-
-export function validateDefaultMemberPermissions(permissions: unknown) {
-	return memberPermissionPredicate.parse(permissions);
-}
-
-export const contextsPredicate = s.array(
-	s.nativeEnum(InteractionContextType).setValidationEnabled(isValidationEnabled),
-);
-
-export const integrationTypesPredicate = s.array(
-	s.nativeEnum(ApplicationIntegrationType).setValidationEnabled(isValidationEnabled),
-);
+export const contextMenuPredicate = z.object({
+	type: typePredicate,
+	contexts: contextsPredicate.optional(),
+	default_member_permissions: memberPermissionsPredicate.optional(),
+	name: namePredicate,
+	name_localizations: localeMapPredicate.optional(),
+	integration_types: integrationTypesPredicate.optional(),
+	nsfw: z.boolean().optional(),
+});

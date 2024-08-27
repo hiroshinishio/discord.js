@@ -3,23 +3,13 @@ import type {
 	ApplicationIntegrationType,
 	InteractionContextType,
 	LocaleString,
-	LocalizationMap,
 	Permissions,
 	RESTPostAPIContextMenuApplicationCommandsJSONBody,
 } from 'discord-api-types/v10';
 import type { RestOrArray } from '../../util/normalizeArray.js';
 import { normalizeArray } from '../../util/normalizeArray.js';
-import { validateLocale, validateLocalizationMap } from '../slashCommands/Assertions.js';
-import {
-	validateRequiredParameters,
-	validateName,
-	validateType,
-	validateDefaultPermission,
-	validateDefaultMemberPermissions,
-	validateDMPermission,
-	contextsPredicate,
-	integrationTypesPredicate,
-} from './Assertions.js';
+import { isValidationEnabled } from '../../util/validation.js';
+import { contextMenuPredicate } from './Assertions.js';
 
 /**
  * The type a context menu command can be.
@@ -30,50 +20,11 @@ export type ContextMenuCommandType = ApplicationCommandType.Message | Applicatio
  * A builder that creates API-compatible JSON data for context menu commands.
  */
 export class ContextMenuCommandBuilder {
-	/**
-	 * The name of this command.
-	 */
-	public readonly name: string = undefined!;
+	private readonly data: Partial<RESTPostAPIContextMenuApplicationCommandsJSONBody>;
 
-	/**
-	 * The name localizations of this command.
-	 */
-	public readonly name_localizations?: LocalizationMap;
-
-	/**
-	 * The type of this command.
-	 */
-	public readonly type: ContextMenuCommandType = undefined!;
-
-	/**
-	 * The contexts for this command.
-	 */
-	public readonly contexts?: InteractionContextType[];
-
-	/**
-	 * Whether this command is enabled by default when the application is added to a guild.
-	 *
-	 * @deprecated Use {@link ContextMenuCommandBuilder.setDefaultMemberPermissions} or {@link ContextMenuCommandBuilder.setDMPermission} instead.
-	 */
-	public readonly default_permission: boolean | undefined = undefined;
-
-	/**
-	 * The set of permissions represented as a bit set for the command.
-	 */
-	public readonly default_member_permissions: Permissions | null | undefined = undefined;
-
-	/**
-	 * Indicates whether the command is available in direct messages with the application.
-	 *
-	 * @remarks
-	 * By default, commands are visible. This property is only for global commands.
-	 */
-	public readonly dm_permission: boolean | undefined = undefined;
-
-	/**
-	 * The integration types for this command.
-	 */
-	public readonly integration_types?: ApplicationIntegrationType[];
+	public constructor(data: Partial<RESTPostAPIContextMenuApplicationCommandsJSONBody> = {}) {
+		this.data = data;
+	}
 
 	/**
 	 * Sets the contexts of this command.
@@ -81,8 +32,7 @@ export class ContextMenuCommandBuilder {
 	 * @param contexts - The contexts
 	 */
 	public setContexts(...contexts: RestOrArray<InteractionContextType>) {
-		Reflect.set(this, 'contexts', contextsPredicate.parse(normalizeArray(contexts)));
-
+		this.data.contexts = normalizeArray(contexts);
 		return this;
 	}
 
@@ -92,8 +42,7 @@ export class ContextMenuCommandBuilder {
 	 * @param integrationTypes - The integration types
 	 */
 	public setIntegrationTypes(...integrationTypes: RestOrArray<ApplicationIntegrationType>) {
-		Reflect.set(this, 'integration_types', integrationTypesPredicate.parse(normalizeArray(integrationTypes)));
-
+		this.data.integration_types = normalizeArray(integrationTypes);
 		return this;
 	}
 
@@ -103,11 +52,7 @@ export class ContextMenuCommandBuilder {
 	 * @param name - The name to use
 	 */
 	public setName(name: string) {
-		// Assert the name matches the conditions
-		validateName(name);
-
-		Reflect.set(this, 'name', name);
-
+		this.data.name = name;
 		return this;
 	}
 
@@ -117,29 +62,7 @@ export class ContextMenuCommandBuilder {
 	 * @param type - The type to use
 	 */
 	public setType(type: ContextMenuCommandType) {
-		// Assert the type is valid
-		validateType(type);
-
-		Reflect.set(this, 'type', type);
-
-		return this;
-	}
-
-	/**
-	 * Sets whether the command is enabled by default when the application is added to a guild.
-	 *
-	 * @remarks
-	 * If set to `false`, you will have to later `PUT` the permissions for this command.
-	 * @param value - Whether to enable this command by default
-	 * @see {@link https://discord.com/developers/docs/interactions/application-commands#permissions}
-	 * @deprecated Use {@link ContextMenuCommandBuilder.setDefaultMemberPermissions} or {@link ContextMenuCommandBuilder.setDMPermission} instead.
-	 */
-	public setDefaultPermission(value: boolean) {
-		// Assert the value matches the conditions
-		validateDefaultPermission(value);
-
-		Reflect.set(this, 'default_permission', value);
-
+		this.data.type = type;
 		return this;
 	}
 
@@ -151,29 +74,16 @@ export class ContextMenuCommandBuilder {
 	 * @param permissions - The permissions bit field to set
 	 * @see {@link https://discord.com/developers/docs/interactions/application-commands#permissions}
 	 */
-	public setDefaultMemberPermissions(permissions: Permissions | bigint | number | null | undefined) {
-		// Assert the value and parse it
-		const permissionValue = validateDefaultMemberPermissions(permissions);
-
-		Reflect.set(this, 'default_member_permissions', permissionValue);
-
+	public setDefaultMemberPermissions(permissions: Permissions | bigint | number) {
+		this.data.default_member_permissions = typeof permissions === 'string' ? permissions : permissions.toString();
 		return this;
 	}
 
 	/**
-	 * Sets if the command is available in direct messages with the application.
-	 *
-	 * @remarks
-	 * By default, commands are visible. This method is only for global commands.
-	 * @param enabled - Whether the command should be enabled in direct messages
-	 * @see {@link https://discord.com/developers/docs/interactions/application-commands#permissions}
+	 * Clears the default permissions for this command.
 	 */
-	public setDMPermission(enabled: boolean | null | undefined) {
-		// Assert the value matches the conditions
-		validateDMPermission(enabled);
-
-		Reflect.set(this, 'dm_permission', enabled);
-
+	public clearDefaultMemberPermissions() {
+		this.data.default_member_permissions = undefined;
 		return this;
 	}
 
@@ -183,21 +93,22 @@ export class ContextMenuCommandBuilder {
 	 * @param locale - The locale to set
 	 * @param localizedName - The localized name for the given `locale`
 	 */
-	public setNameLocalization(locale: LocaleString, localizedName: string | null) {
-		if (!this.name_localizations) {
-			Reflect.set(this, 'name_localizations', {});
-		}
+	public setNameLocalization(locale: LocaleString, localizedName: string) {
+		this.data.name_localizations ??= {};
+		this.data.name_localizations[locale] = localizedName;
 
-		const parsedLocale = validateLocale(locale);
+		return this;
+	}
 
-		if (localizedName === null) {
-			this.name_localizations![parsedLocale] = null;
-			return this;
-		}
+	/**
+	 * Clears a name localization for this command.
+	 *
+	 * @param locale - The locale to clear
+	 */
+	public clearNameLocalization(locale: LocaleString) {
+		this.data.name_localizations ??= {};
+		this.data.name_localizations[locale] = undefined;
 
-		validateName(localizedName);
-
-		this.name_localizations![parsedLocale] = localizedName;
 		return this;
 	}
 
@@ -206,31 +117,48 @@ export class ContextMenuCommandBuilder {
 	 *
 	 * @param localizedNames - The object of localized names to set
 	 */
-	public setNameLocalizations(localizedNames: LocalizationMap | null) {
-		if (localizedNames === null) {
-			Reflect.set(this, 'name_localizations', null);
-			return this;
+	public setNameLocalizations(localizedNames: Partial<Record<LocaleString, string>>) {
+		this.data.name_localizations = {};
+
+		for (const args of Object.entries(localizedNames)) {
+			this.setNameLocalization(...(args as [LocaleString, string]));
 		}
 
-		Reflect.set(this, 'name_localizations', {});
+		return this;
+	}
 
-		for (const args of Object.entries(localizedNames))
-			this.setNameLocalization(...(args as [LocaleString, string | null]));
+	/**
+	 * Clears the name localizations for this command.
+	 */
+	public clearNameLocalizations() {
+		this.data.name_localizations = undefined;
+		return this;
+	}
+
+	/**
+	 * Sets whether this command is NSFW.
+	 *
+	 * @param nsfw - Whether this command is NSFW
+	 */
+	public setNsfw(nsfw: boolean) {
+		this.data.nsfw = nsfw;
 		return this;
 	}
 
 	/**
 	 * Serializes this builder to API-compatible JSON data.
 	 *
-	 * @remarks
-	 * This method runs validations on the data before serializing it.
-	 * As such, it may throw an error if the data is invalid.
+	 * Note that by disabling validation, there is no guarantee that the resulting object will be valid.
+	 *
+	 * @param validationOverride - Force validation to run/not run regardless of your global preference
 	 */
-	public toJSON(): RESTPostAPIContextMenuApplicationCommandsJSONBody {
-		validateRequiredParameters(this.name, this.type);
+	public toJSON(validationOverride?: boolean): RESTPostAPIContextMenuApplicationCommandsJSONBody {
+		const data = structuredClone(this.data);
 
-		validateLocalizationMap(this.name_localizations);
+		if (validationOverride ?? isValidationEnabled()) {
+			contextMenuPredicate.parse(data);
+		}
 
-		return { ...this };
+		return data as RESTPostAPIContextMenuApplicationCommandsJSONBody;
 	}
 }

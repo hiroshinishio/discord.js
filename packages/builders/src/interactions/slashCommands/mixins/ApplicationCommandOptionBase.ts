@@ -1,3 +1,4 @@
+import type { JSONEncodable } from '@discordjs/util';
 import type {
 	APIApplicationCommandBasicOption,
 	APIApplicationCommandOption,
@@ -16,7 +17,10 @@ export interface ApplicationCommandOptionBaseData extends Partial<Pick<APIApplic
 /**
  * The base application command option builder that contains common symbols for application command builders.
  */
-export abstract class ApplicationCommandOptionBase extends SharedNameAndDescription {
+export abstract class ApplicationCommandOptionBase
+	extends SharedNameAndDescription
+	implements JSONEncodable<APIApplicationCommandBasicOption>
+{
 	protected readonly predicate: z.ZodTypeAny = basicOptionPredicate;
 
 	protected declare readonly data: ApplicationCommandOptionBaseData & SharedNameAndDescriptionData;

@@ -7,65 +7,25 @@ import {
 import { describe, test, expect } from 'vitest';
 import {
 	ActionRowBuilder,
-	ButtonBuilder,
 	ModalBuilder,
 	TextInputBuilder,
 	type ModalActionRowComponentBuilder,
 } from '../../src/index.js';
-import {
-	componentsValidator,
-	titleValidator,
-	validateRequiredParameters,
-} from '../../src/interactions/modals/Assertions.js';
 
 const modal = () => new ModalBuilder();
+const textInput = () =>
+	new ActionRowBuilder<TextInputBuilder>().addComponents(
+		new TextInputBuilder().setCustomId('text').setLabel(':3').setStyle(TextInputStyle.Short),
+	);
 
 describe('Modals', () => {
-	describe('Assertion Tests', () => {
-		test('GIVEN valid title THEN validator does not throw', () => {
-			expect(() => titleValidator.parse('foobar')).not.toThrowError();
-		});
-
-		test('GIVEN invalid title THEN validator does throw', () => {
-			expect(() => titleValidator.parse(42)).toThrowError();
-		});
-
-		test('GIVEN valid components THEN validator does not throw', () => {
-			expect(() => componentsValidator.parse([new ActionRowBuilder(), new ActionRowBuilder()])).not.toThrowError();
-		});
-
-		test('GIVEN invalid components THEN validator does throw', () => {
-			expect(() => componentsValidator.parse([new ButtonBuilder(), new TextInputBuilder()])).toThrowError();
-		});
-
-		test('GIVEN valid required parameters THEN validator does not throw', () => {
-			expect(() =>
-				validateRequiredParameters('123', 'title', [new ActionRowBuilder(), new ActionRowBuilder()]),
-			).not.toThrowError();
-		});
-
-		test('GIVEN invalid required parameters THEN validator does throw', () => {
-			expect(() =>
-				// @ts-expect-error: Missing required parameter
-				validateRequiredParameters('123', undefined, [new ActionRowBuilder(), new ButtonBuilder()]),
-			).toThrowError();
-		});
-	});
-
 	test('GIVEN valid fields THEN builder does not throw', () => {
-		expect(() =>
-			modal().setTitle('test').setCustomId('foobar').setComponents(new ActionRowBuilder()),
-		).not.toThrowError();
-
-		expect(() =>
-			// @ts-expect-error: You can pass a TextInputBuilder and it will add it to an action row
-			modal().setTitle('test').setCustomId('foobar').addComponents(new TextInputBuilder()),
-		).not.toThrowError();
+		expect(() => modal().setTitle('test').setCustomId('foobar').setComponents(textInput()).toJSON()).not.toThrowError();
+		expect(() => modal().setTitle('test').setCustomId('foobar').addComponents(textInput()).toJSON()).not.toThrowError();
 	});
 
 	test('GIVEN invalid fields THEN builder does throw', () => {
 		expect(() => modal().setTitle('test').setCustomId('foobar').toJSON()).toThrowError();
-
 		// @ts-expect-error: CustomId is invalid
 		expect(() => modal().setTitle('test').setCustomId(42).toJSON()).toThrowError();
 	});

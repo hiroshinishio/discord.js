@@ -1,3 +1,4 @@
+import type { JSONEncodable } from '@discordjs/util';
 import type { APIEmbed, APIEmbedAuthor, APIEmbedField, APIEmbedFooter } from 'discord-api-types/v10';
 import type { RestOrArray } from '../../util/normalizeArray.js';
 import { normalizeArray } from '../../util/normalizeArray.js';
@@ -19,7 +20,7 @@ export interface EmbedBuilderData extends Omit<APIEmbed, 'author' | 'fields' | '
 /**
  * A builder that creates API-compatible JSON data for embeds.
  */
-export class EmbedBuilder {
+export class EmbedBuilder implements JSONEncodable<APIEmbed> {
 	/**
 	 * The API data associated with this embed.
 	 */

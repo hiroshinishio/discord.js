@@ -1,3 +1,4 @@
+import type { JSONEncodable } from '@discordjs/util';
 import type {
 	APIApplicationCommandSubcommandOption,
 	APIApplicationCommandSubcommandGroupOption,
@@ -19,7 +20,10 @@ export interface SlashCommandSubcommandGroupData {
  *
  * @see {@link https://discord.com/developers/docs/interactions/application-commands#subcommands-and-subcommand-groups}
  */
-export class SlashCommandSubcommandGroupBuilder extends SharedNameAndDescription {
+export class SlashCommandSubcommandGroupBuilder
+	extends SharedNameAndDescription
+	implements JSONEncodable<APIApplicationCommandSubcommandGroupOption>
+{
 	protected declare readonly data: SharedNameAndDescriptionData & SlashCommandSubcommandGroupData;
 
 	/**
@@ -70,7 +74,10 @@ export class SlashCommandSubcommandGroupBuilder extends SharedNameAndDescription
  *
  * @see {@link https://discord.com/developers/docs/interactions/application-commands#subcommands-and-subcommand-groups}
  */
-export class SlashCommandSubcommandBuilder extends Mixin(SharedNameAndDescription, SharedSlashCommandOptions) {
+export class SlashCommandSubcommandBuilder
+	extends Mixin(SharedNameAndDescription, SharedSlashCommandOptions)
+	implements JSONEncodable<APIApplicationCommandSubcommandOption>
+{
 	/**
 	 * Serializes this builder to API-compatible JSON data.
 	 *

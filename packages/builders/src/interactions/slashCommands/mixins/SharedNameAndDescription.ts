@@ -62,7 +62,7 @@ export class SharedNameAndDescription {
 	 * @param localizedNames - The object of localized names to set
 	 */
 	public setNameLocalizations(localizedNames: Partial<Record<LocaleString, string>>) {
-		this.data.name_localizations ??= {};
+		this.data.name_localizations = {};
 
 		for (const args of Object.entries(localizedNames)) {
 			this.setNameLocalization(...(args as [LocaleString, string]));
@@ -107,7 +107,7 @@ export class SharedNameAndDescription {
 	 * @param localizedDescriptions - The object of localized descriptions to set
 	 */
 	public setDescriptionLocalizations(localizedDescriptions: Partial<Record<LocaleString, string>>) {
-		this.data.description_localizations ??= {};
+		this.data.description_localizations = {};
 
 		for (const args of Object.entries(localizedDescriptions)) {
 			this.setDescriptionLocalization(...(args as [LocaleString, string]));
