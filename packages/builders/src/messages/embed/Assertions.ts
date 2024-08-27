@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-const namePredicate = z.string().min(1).max(256);
+export const namePredicate = z.string().min(1).max(256);
 
-const iconURLPredicate = z
+export const iconURLPredicate = z
 	.string()
 	.url()
 	.refine(
@@ -14,7 +14,7 @@ const iconURLPredicate = z
 		{ message: 'Invalid protocol for icon URL. Must be http:, https:, or attachment:' },
 	);
 
-const URLPredicate = z
+export const URLPredicate = z
 	.string()
 	.url()
 	.refine(

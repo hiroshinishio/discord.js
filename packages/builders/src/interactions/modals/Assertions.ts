@@ -2,7 +2,7 @@ import { ComponentType } from 'discord-api-types/v10';
 import { z } from 'zod';
 import { customIdPredicate } from '../Assertions.js';
 
-const titlePredicate = z.string().min(1).max(45);
+export const titlePredicate = z.string().min(1).max(45);
 
 export const modalPredicate = z.object({
 	title: titlePredicate,
